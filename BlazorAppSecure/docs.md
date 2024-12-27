@@ -72,3 +72,72 @@ Make sure your Program.cs file includes the necessary setup for Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
 ```
+
+## Docker
+
+### Summary of Changes for Docker Orchestration
+
+#### 1. Moving the Solution File
+- **Moved the Solution File**: The solution file (`BlazorAppSecure.sln`) was moved to a parent directory to separate it from the project files.
+- **Updated the Project Path in the Solution File**: The path to the project file in the solution file was updated to reflect the new location.
+
+#### 2. Docker Configuration
+
+-  __Container Orchestrator Support...__
+   - **Added Docker Orchestrator Support**: Created a docker-compose.yml file to define the services required for your application.
+
+#### 3. Defined Services in 
+
+docker-compose.yml
+
+
+- **blazorappsecure**:
+  - **Image**: `${DOCKER_REGISTRY-}blazorappsecure`
+  - **Container Name**: blazorappsecure
+  - **Build Context**: `.`
+  - **Dockerfile**: Dockerfile
+  - **Ports**: `5000:5000`, `5001:5001`
+  
+- **blazorappsecure.database**:
+   - **Image**: `postgres:latest`
+   - **Container Name**: `blazorappsecure.database`
+   - **Environment Variables**: 
+      - `POSTGRES_USER: postgres`
+      - `POSTGRES_PASSWORD: postgres`
+      - `POSTGRES_DB: blazorappsecure`
+   - **Volumes**: `./.containers/blazorappsecure.database:/var/lib/postgresql/data`
+   - **Ports**: `5432:5432`
+  
+- **pgadmin**:
+   - **Image**: `dpage/pgadmin4`
+   - **Container Name**: `pgadmin`
+   - **Environment Variables**:
+      - `PGADMIN_DEFAULT_EMAIL: admin@example.com`
+      - `PGADMIN_DEFAULT_PASSWORD: admin`
+   - **Ports**: `5050:80`
+   - **Depends On**: `blazorappsecure.database`
+
+#### 4. Connection String Update
+- **Updated Connection String**: Modified the connection string in your configuration to connect to the PostgreSQL database running in the Docker container.
+  ```json
+  "ConnectionStrings": {
+    "Database": "Host=blazorappsecure.database;Port=5432;Database=blazorappsecure;Username=postgres;Password=postgres;Include Error Detail=true"
+  }
+  ```
+
+#### 5. pgAdmin for Browser Access
+
+- **Added pgAdmin Service**: Included pgAdmin in the docker-compose.yml file to manage the PostgreSQL database through a web interface.
+
+- **Access pgAdmin**: After running `docker-compose up`, you can access pgAdmin in your browser at `http://localhost:5050` using the credentials specified in the environment variables.
+
+#### 6. Docker Ignore Configuration
+
+- **Created .dockerignore File**: Added a .dockerignore file to exclude unnecessary files and directories from the Docker build context.
+
+#### 7. Git Ignore Configuration
+- **Updated .gitignore File**: Added the .containers directory to the .gitignore file to exclude it from version control.
+
+  ```ignore
+  **/.containers
+  ```

@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAppSecure", "BlazorAppSecure.csproj", "{391A1053-BAB3-4119-9429-AC99A9471E2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAppSecure", "BlazorAppSecure\BlazorAppSecure.csproj", "{391A1053-BAB3-4119-9429-AC99A9471E2E}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{10BADE8B-C28B-4304-AEC8-856FAB5F2EF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{391A1053-BAB3-4119-9429-AC99A9471E2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{391A1053-BAB3-4119-9429-AC99A9471E2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{391A1053-BAB3-4119-9429-AC99A9471E2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10BADE8B-C28B-4304-AEC8-856FAB5F2EF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10BADE8B-C28B-4304-AEC8-856FAB5F2EF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10BADE8B-C28B-4304-AEC8-856FAB5F2EF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10BADE8B-C28B-4304-AEC8-856FAB5F2EF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
