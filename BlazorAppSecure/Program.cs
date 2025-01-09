@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddHttpClient(); // Add this line
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -25,6 +26,7 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddCooki
 
 builder.Services.AddIdentityCore<User>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders()
     .AddApiEndpoints();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -102,6 +104,7 @@ app.MapGet("users/me", async (ClaimsPrincipal claims, ApplicationDbContext conte
     return user;
 }).RequireAuthorization();
 
+app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 app.MapIdentityApi<User>();

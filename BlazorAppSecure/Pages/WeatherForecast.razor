@@ -1,0 +1,71 @@
+﻿@page "/weatherforecast"
+
+@using System.Net.Http
+@using System.Net.Http.Json
+@using WF = BlazorAppSecure.Data
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Weather Forecast</PageTitle>
+
+<h1>Weather Forecast</h1>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temperature (C)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private WF.WeatherForecast[] forecasts;
+    private string htmlContent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("https://localhost:7085/api/WeatherForecast");
+            if (response.IsSuccessStatusCode && response.Content.Headers.ContentType.MediaType == "application/json")
+            {
+                forecasts = await response.Content.ReadFromJsonAsync<WF.WeatherForecast[]>();
+            }
+            else if (response.Content.Headers.ContentType.MediaType == "text/html")
+            {
+                htmlContent = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                Navigation.NavigateTo("/error", true);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Navigation.NavigateTo("/error", true);
+        }
+        catch (Exception ex)
+        {
+            Navigation.NavigateTo("/error", true);
+        }
+    }
+}

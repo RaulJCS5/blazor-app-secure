@@ -16,5 +16,16 @@ namespace BlazorAppSecure.Data
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             }).ToArray());
         }
+
+        public WeatherForecast[] GetForecast()
+        {
+            var startDate = DateTime.Now;
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = startDate.AddDays(index),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+            }).ToArray();
+        }
     }
 }
