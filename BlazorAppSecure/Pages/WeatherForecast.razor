@@ -39,7 +39,6 @@ else
 
 @code {
     private WF.WeatherForecast[] forecasts;
-    private string htmlContent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,13 +49,13 @@ else
             {
                 forecasts = await response.Content.ReadFromJsonAsync<WF.WeatherForecast[]>();
             }
-            else if (response.Content.Headers.ContentType.MediaType == "text/html")
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                htmlContent = await response.Content.ReadAsStringAsync();
+
             }
             else
             {
-                Navigation.NavigateTo("/error", true);
+
             }
         }
         catch (HttpRequestException ex)

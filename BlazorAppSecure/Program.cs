@@ -1,10 +1,16 @@
 using BlazorAppSecure.Data;
 using BlazorAppSecure.Database;
 using BlazorAppSecure.Extensions;
+using BlazorAppSecure.Handlers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +20,27 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddHttpClient(); // Add this line
 
+builder.Services.AddTransient<HttpClientHandler>(); // Register HttpClientHandler as transient
+builder.Services.AddScoped<UnauthorizedResponseHandler>(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    var innerHandler = sp.GetRequiredService<HttpClientHandler>();
+    return new UnauthorizedResponseHandler(navigationManager, innerHandler);
+});
+builder.Services.AddScoped(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    var handler = sp.GetRequiredService<UnauthorizedResponseHandler>();
+    var httpClient = new HttpClient(handler) { BaseAddress = new Uri(navigationManager.BaseUri) };
+
+    logger.LogInformation("NavigationManager: {NavigationManager}", navigationManager);
+    logger.LogInformation("UnauthorizedResponseHandler: {Handler}", handler);
+    logger.LogInformation("HttpClient: {HttpClient}", httpClient);
+
+    return httpClient;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -21,8 +48,35 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddCookie(IdentityConstants.ApplicationScheme)
-    .AddBearerToken(IdentityConstants.BearerScheme);
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            var result = JsonSerializer.Serialize(new { message = "Unauthorized access" });
+            return context.Response.WriteAsync(result);
+        }
+    };
+});
 
 builder.Services.AddIdentityCore<User>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
