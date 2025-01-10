@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorAppSecure.Handlers
 {
@@ -22,7 +23,20 @@ namespace BlazorAppSecure.Handlers
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _navigationManager.NavigateTo("/login", true);
+                var currentUri = _navigationManager.Uri;
+                var loginUri = _navigationManager.BaseUri + "login";
+
+                if (!currentUri.Equals(loginUri, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        _navigationManager.NavigateTo("/", true);
+                    }
+                    catch (NavigationException)
+                    {
+                        
+                    }
+                }
             }
 
             return response;

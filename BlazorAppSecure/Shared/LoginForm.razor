@@ -1,0 +1,87 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using BlazorAppSecure.Data
+@using BlazorAppSecure.Database
+@using BlazorAppSecure.ViewModel
+@inject UserManager<User> UserManager
+@inject SignInManager<User> SignInManager
+@inject NavigationManager Navigation
+@inject ILogger<LoginForm> Logger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="d-flex justify-content-center align-items-start vh-100">
+    <div class="card p-4 mt-5" style="width: 400px;">
+        <div class="text-center mb-4">
+            <!-- TODO: Add your logo or other elements here -->
+            <h3>Login</h3>
+        </div>
+        <EditForm Model="@_loginviewmodel" OnValidSubmit="@Authenticate">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="user-name">User name</label>
+                <InputText class="form-control" id="user-name" aria-describedby="emailHelp" placeholder="User name" @bind-Value=@_loginviewmodel.Username />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText type="password" class="form-control" id="password" placeholder="Password" @bind-Value=@_loginviewmodel.Password />
+            </div>
+            <p></p>
+            <ValidationSummary />
+            <p></p>
+            <div class="form-group">
+                <button type="submit" id="login" name="login" class="btn btn-primary btn-block">Login</button>
+            </div>
+            <!-- TODO: Add other elements like "forgot my password", etc. -->
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3">@errorMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+
+    private LoginViewModel _loginviewmodel = new LoginViewModel();
+    private string errorMessage;
+
+    private async Task Authenticate()
+    {
+        try
+        {
+            var user = await UserManager.FindByNameAsync(_loginviewmodel.Username);
+            if (user == null)
+            {
+                errorMessage = "User not found.";
+                return;
+            }
+
+            var result = await SignInManager.CheckPasswordSignInAsync(user, _loginviewmodel.Password, lockoutOnFailure: false);
+            if (result.Succeeded)
+            {
+                //await SignInManager.SignInAsync(user, isPersistent: false);
+                Logger.LogInformation("User logged in.");
+                await AuthenticationStateProvider.GetAuthenticationStateAsync(); // Refresh the authentication state
+                Navigation.NavigateTo("/");
+            }
+            else if (result.IsLockedOut)
+            {
+                Logger.LogWarning("User account locked out.");
+                errorMessage = "User account locked out.";
+            }
+            else
+            {
+                Logger.LogWarning("Incorrect password.");
+                errorMessage = "Incorrect password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred during login.");
+            errorMessage = "An error occurred. Please try again.";
+        }
+    }
+}
