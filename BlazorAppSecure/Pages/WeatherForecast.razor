@@ -3,6 +3,7 @@
 @using System.Net.Http
 @using System.Net.Http.Json
 @using WF = BlazorAppSecure.Data
+@inject IHttpClientFactory HttpClientFactory
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -44,7 +45,8 @@ else
     {
         try
         {
-            var response = await Http.GetAsync("https://localhost:7085/api/WeatherForecast");
+            var client = HttpClientFactory.CreateClient("BlazorAppSecureAPI");
+            var response = await client.GetAsync("api/weatherforecast");
             if (response.IsSuccessStatusCode && response.Content.Headers.ContentType.MediaType == "application/json")
             {
                 forecasts = await response.Content.ReadFromJsonAsync<WF.WeatherForecast[]>();

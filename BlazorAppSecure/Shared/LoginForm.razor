@@ -1,9 +1,12 @@
-﻿@using System.ComponentModel.DataAnnotations
+﻿@page "/auth/login"
+
+@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
 @using BlazorAppSecure.Data
 @using BlazorAppSecure.Database
 @using BlazorAppSecure.ViewModel
+@using Microsoft.AspNetCore.Authentication
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
 @inject NavigationManager Navigation
@@ -48,6 +51,11 @@
     private LoginViewModel _loginviewmodel = new LoginViewModel();
     private string errorMessage;
 
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
     private async Task Authenticate()
     {
         try
@@ -64,8 +72,8 @@
             {
                 //await SignInManager.SignInAsync(user, isPersistent: false);
                 Logger.LogInformation("User logged in.");
-                await AuthenticationStateProvider.GetAuthenticationStateAsync(); // Refresh the authentication state
-                Navigation.NavigateTo("/");
+                
+
             }
             else if (result.IsLockedOut)
             {
