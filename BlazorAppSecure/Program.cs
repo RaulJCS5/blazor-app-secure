@@ -1,17 +1,15 @@
+using BlazorAppSecure;
 using BlazorAppSecure.Data;
 using BlazorAppSecure.Database;
 using BlazorAppSecure.Extensions;
 using BlazorAppSecure.Handlers;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +46,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "BlazorAppSecure API", Version = "v1" });
 });
 
+builder.Services.AddTransient < IEmailSender<User>, EmailSender<User>>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -65,10 +65,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddIdentityCore<User>()
+builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders()
-    .AddApiEndpoints();
+    .AddDefaultTokenProviders();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
@@ -124,6 +123,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<BlazorCookieLoginMiddleware>();
 
 // Enable middleware to serve generated Swagger as a JSON endpoint and Swagger UI only in development.
 if (app.Environment.IsDevelopment())

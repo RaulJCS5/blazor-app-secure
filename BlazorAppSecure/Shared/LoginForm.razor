@@ -1,5 +1,6 @@
 ﻿@page "/auth/login"
 
+@attribute [AllowAnonymous]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
@@ -67,23 +68,26 @@
                 return;
             }
 
-            var result = await SignInManager.CheckPasswordSignInAsync(user, _loginviewmodel.Password, lockoutOnFailure: false);
-            if (result.Succeeded)
-            {
-                //await SignInManager.SignInAsync(user, isPersistent: false);
-                Logger.LogInformation("User logged in.");
-                
 
-            }
-            else if (result.IsLockedOut)
+            if (await SignInManager.CanSignInAsync(user))
             {
-                Logger.LogWarning("User account locked out.");
-                errorMessage = "User account locked out.";
-            }
-            else
-            {
-                Logger.LogWarning("Incorrect password.");
-                errorMessage = "Incorrect password.";
+                var result = await SignInManager.CheckPasswordSignInAsync(user, _loginviewmodel.Password, lockoutOnFailure: false);
+                if (result == Microsoft.AspNetCore.Identity.SignInResult.Success)
+                {
+                    Guid key = Guid.NewGuid();
+                    BlazorCookieLoginMiddleware.Logins[key] = new LoginInfo { Username = user.UserName, Password = _loginviewmodel.Password };
+                    Navigation.NavigateTo($"/login?key={key}", true);
+                }
+                else if (result.IsLockedOut)
+                {
+                    Logger.LogWarning("User account locked out.");
+                    errorMessage = "User account locked out.";
+                }
+                else
+                {
+                    Logger.LogWarning("Incorrect password.");
+                    errorMessage = "Incorrect password.";
+                }
             }
         }
         catch (Exception ex)
