@@ -14,54 +14,69 @@
 @inject ILogger<LoginForm> Logger
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<div class="d-flex justify-content-center align-items-start vh-100">
-    <div class="card p-4 mt-5" style="width: 400px;">
-        <div class="text-center mb-4">
-            <!-- TODO: Add your logo or other elements here -->
-            <h3>Login</h3>
-        </div>
-        <EditForm Model="@_loginviewmodel" OnValidSubmit="@Authenticate">
-            <DataAnnotationsValidator />
+<PageTitle>Log in</PageTitle>
 
-            <div class="form-group">
-                <label for="user-name">User name</label>
-                <InputText class="form-control" id="user-name" aria-describedby="emailHelp" placeholder="User name" @bind-Value=@_loginviewmodel.Username />
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <InputText type="password" class="form-control" id="password" placeholder="Password" @bind-Value=@_loginviewmodel.Password />
-            </div>
-            <p></p>
-            <ValidationSummary />
-            <p></p>
-            <div class="form-group">
-                <button type="submit" id="login" name="login" class="btn btn-primary btn-block">Login</button>
-            </div>
-            <!-- TODO: Add other elements like "forgot my password", etc. -->
-        </EditForm>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger mt-3">@errorMessage</div>
-        }
+<h1>Log in</h1>
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                <DataAnnotationsValidator />
+                <h2>Use a local account to log in.</h2>
+                <hr />
+                <ValidationSummary class="text-danger" role="alert" />
+                <div class="form-floating mb-3">
+                    <InputText @bind-Value="Input.Username" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <label for="username" class="form-label">Username</label>
+                    <ValidationMessage For="() => Input.Username" class="text-danger" />
+                </div>
+                <div class="form-floating mb-3">
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                    <label for="password" class="form-label">Password</label>
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                </div>
+                <div class="checkbox mb-3">
+                    <label class="form-label">
+                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
+                        Remember me
+                    </label>
+                </div>
+                <div>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                </div>
+            </EditForm>
+        </section>
     </div>
 </div>
 
 @code {
+    private string? errorMessage;
 
-    private LoginViewModel _loginviewmodel = new LoginViewModel();
-    private string errorMessage;
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private LoginViewModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-
+        if (HttpContext != null)
+        {
+            if (HttpMethods.IsGet(HttpContext.Request.Method))
+            {
+                // Clear the existing external cookie to ensure a clean login process
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            }
+        }
     }
-
-    private async Task Authenticate()
+    private async Task LoginUser()
     {
         try
         {
-            var user = await UserManager.FindByNameAsync(_loginviewmodel.Username);
+            var user = await UserManager.FindByNameAsync(Input.Username);
             if (user == null)
             {
                 errorMessage = "User not found.";
@@ -71,11 +86,11 @@
 
             if (await SignInManager.CanSignInAsync(user))
             {
-                var result = await SignInManager.CheckPasswordSignInAsync(user, _loginviewmodel.Password, lockoutOnFailure: false);
+                var result = await SignInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
                 if (result == Microsoft.AspNetCore.Identity.SignInResult.Success)
                 {
                     Guid key = Guid.NewGuid();
-                    BlazorCookieLoginMiddleware.Logins[key] = new LoginInfo { Username = user.UserName, Password = _loginviewmodel.Password };
+                    BlazorCookieLoginMiddleware.Logins[key] = new LoginInfo { Username = user.UserName, Password = Input.Password };
                     Navigation.NavigateTo($"/login?key={key}", true);
                 }
                 else if (result.IsLockedOut)

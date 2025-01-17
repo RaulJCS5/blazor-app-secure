@@ -3,6 +3,14 @@
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo($"auth/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+        try
+        {
+            NavigationManager.NavigateTo($"auth/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+        }
+        catch (NavigationException ex)
+        {
+            // Handle navigation exception
+            Console.Error.WriteLine($"Navigation error: {ex.Message}");
+        }
     }
 }

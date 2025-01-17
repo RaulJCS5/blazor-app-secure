@@ -30,10 +30,41 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="profile">
-                <span class="oi oi-cloud" aria-hidden="true"></span> Profile
+            <NavLink class="nav-link" href="auth">
+                <span class="oi oi-eye" aria-hidden="true"></span> Auth Required
             </NavLink>
         </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="oi oi-person" aria-hidden="true"></span> @context.User.Identity?.Name
+                    </NavLink>
+                </div>
+                @* <div class="nav-item px-3">
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="nav-link">
+                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                        </button>
+                    </form>
+                </div> *@
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="auth/register">
+                        <span class="oi oi-badge" aria-hidden="true"></span> Register
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="auth/login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
