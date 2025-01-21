@@ -53,17 +53,23 @@ builder.Services.AddAuthentication(options =>
 })
     .AddIdentityCookies();
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
+
+var connectionString = builder.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
-
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+
+//builder.Services.AddAntiforgery(options =>
+//{
+//    options.HeaderName = "X-CSRF-TOKEN";
+//});
 
 var app = builder.Build();
 
@@ -114,8 +120,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
+
+//app.UseAntiforgery();
 
 app.UseMiddleware<BlazorCookieLoginMiddleware>();
 
@@ -143,5 +151,8 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 app.MapIdentityApi<User>();
+
+// Add additional endpoints required by the Identity /Account Razor components.
+//app.MapAdditionalIdentityEndpoints();
 
 app.Run();

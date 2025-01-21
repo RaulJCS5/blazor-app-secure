@@ -52,6 +52,12 @@ namespace BlazorAppSecure
                     return;
                 }
             }
+            else if (context.Request.Path == "/Account/Logout")
+            {
+                await signInMgr.SignOutAsync();
+                context.Response.Redirect("/");
+                return;
+            }
             else
             {
                 await _next.Invoke(context);
