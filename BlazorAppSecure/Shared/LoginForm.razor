@@ -1,18 +1,15 @@
-﻿@page "/auth/login"
+﻿@page "/Account/Login"
 
-@attribute [AllowAnonymous]
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
-@using BlazorAppSecure.Data
 @using BlazorAppSecure.Database
 @using BlazorAppSecure.ViewModel
-@using Microsoft.AspNetCore.Authentication
-@inject UserManager<User> UserManager
+
 @inject SignInManager<User> SignInManager
-@inject NavigationManager Navigation
 @inject ILogger<LoginForm> Logger
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Log in</PageTitle>
 
@@ -20,15 +17,16 @@
 <div class="row">
     <div class="col-md-4">
         <section>
+            <StatusMessage Message="@errorMessage" />
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                 <DataAnnotationsValidator />
                 <h2>Use a local account to log in.</h2>
                 <hr />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Username" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="username" class="form-label">Username</label>
-                    <ValidationMessage For="() => Input.Username" class="text-danger" />
+                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <label for="email" class="form-label">Email</label>
+                    <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
                     <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
@@ -44,7 +42,25 @@
                 <div>
                     <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
                 </div>
+                <div>
+                    <p>
+                        <a href="Account/ForgotPassword">Forgot your password?</a>
+                    </p>
+                    <p>
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                    </p>
+                    <p>
+                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
+                    </p>
+                </div>
             </EditForm>
+        </section>
+    </div>
+    <div class="col-md-6 col-md-offset-2">
+        <section>
+            <h3>Use another service to log in.</h3>
+            <hr />
+            <ExternalLoginPicker />
         </section>
     </div>
 </div>
@@ -63,52 +79,37 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpContext != null)
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
-            if (HttpMethods.IsGet(HttpContext.Request.Method))
-            {
-                // Clear the existing external cookie to ensure a clean login process
-                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-            }
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
     }
-    private async Task LoginUser()
+
+    public async Task LoginUser()
     {
-        try
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        if (result.Succeeded)
         {
-            var user = await UserManager.FindByNameAsync(Input.Username);
-            if (user == null)
-            {
-                errorMessage = "User not found.";
-                return;
-            }
-
-
-            if (await SignInManager.CanSignInAsync(user))
-            {
-                var result = await SignInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
-                if (result == Microsoft.AspNetCore.Identity.SignInResult.Success)
-                {
-                    Guid key = Guid.NewGuid();
-                    BlazorCookieLoginMiddleware.Logins[key] = new LoginInfo { Username = user.UserName, Password = Input.Password };
-                    Navigation.NavigateTo($"/login?key={key}", true);
-                }
-                else if (result.IsLockedOut)
-                {
-                    Logger.LogWarning("User account locked out.");
-                    errorMessage = "User account locked out.";
-                }
-                else
-                {
-                    Logger.LogWarning("Incorrect password.");
-                    errorMessage = "Incorrect password.";
-                }
-            }
+            Logger.LogInformation("User logged in.");
+            RedirectManager.RedirectTo(ReturnUrl);
         }
-        catch (Exception ex)
+        else if (result.RequiresTwoFactor)
         {
-            Logger.LogError(ex, "An error occurred during login.");
-            errorMessage = "An error occurred. Please try again.";
+            RedirectManager.RedirectTo(
+                "Account/LoginWith2fa",
+                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        }
+        else if (result.IsLockedOut)
+        {
+            Logger.LogWarning("User account locked out.");
+            RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else
+        {
+            errorMessage = "Error: Invalid login attempt.";
         }
     }
 }

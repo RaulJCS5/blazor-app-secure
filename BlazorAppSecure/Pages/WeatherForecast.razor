@@ -6,6 +6,9 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
 
 <PageTitle>Weather Forecast</PageTitle>
 

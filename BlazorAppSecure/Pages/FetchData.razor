@@ -1,6 +1,9 @@
 ﻿@page "/fetchdata"
 
 @using WF = BlazorAppSecure.Data
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
 
 <PageTitle>Weather forecast</PageTitle>
 

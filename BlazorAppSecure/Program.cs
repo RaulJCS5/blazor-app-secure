@@ -14,6 +14,8 @@ using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
@@ -46,6 +48,10 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "BlazorAppSecure API", Version = "v1" });
 });
 
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddScoped<IdentityRedirectManager>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -53,7 +59,7 @@ builder.Services.AddAuthentication(options =>
 })
     .AddIdentityCookies();
 
-//builder.Services.AddAuthorization();
+builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -120,12 +126,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-//app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 
-//app.UseAntiforgery();
+app.UseAntiforgery();
 
-app.UseMiddleware<BlazorCookieLoginMiddleware>();
+//app.UseMiddleware<BlazorCookieLoginMiddleware>();
 
 // Enable middleware to serve generated Swagger as a JSON endpoint and Swagger UI only in development.
 if (app.Environment.IsDevelopment())
@@ -149,10 +155,11 @@ app.MapGet("users/me", async (ClaimsPrincipal claims, ApplicationDbContext conte
 
 app.MapControllers();
 app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-app.MapIdentityApi<User>();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+//app.MapIdentityApi<User>();
 
 // Add additional endpoints required by the Identity /Account Razor components.
-//app.MapAdditionalIdentityEndpoints();
+app.MapAdditionalIdentityEndpoints();
 
 app.Run();
