@@ -40,6 +40,13 @@ builder.Services.AddSwaggerGen(option =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(option => option.AddPolicy("wasm",
+    policy => policy.WithOrigins(builder.Configuration["BackendUrl"] ?? "", 
+    builder.Configuration["FrontendUrl"] ?? "")
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    ));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -56,6 +63,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapIdentityApi<IdentityUser>();
+
+app.UseCors("wasm");
 
 app.UseHttpsRedirection();
 

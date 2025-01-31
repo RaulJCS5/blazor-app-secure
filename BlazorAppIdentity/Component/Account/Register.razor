@@ -1,0 +1,86 @@
+﻿@page "/register"
+@using BlazorAppIdentity.Services
+
+@inject IAccountManagement Acct
+
+<h3>Register</h3>
+
+<AuthorizeView>
+    <Authorized>
+        <div>
+            <p>Hello, @context.User.Identity.Name!</p>
+            <p>You can register here.</p>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @if (success)
+        {
+            <div class="alert alert-success" role="alert">
+                Registration successful. You can now <a href="login">login</a>.
+            </div>
+        }
+        else
+        {
+            if (errors)
+            {
+                @foreach (var error in errorList)
+                {
+                    <div class="alert alert-danger">@error</div>
+                }
+            }
+            <div class="flex-outer">
+                <div>
+                    <label for="email">Email:</label>
+                    <input autofocus autocomplete="on" required type="email" id="email" @bind="email" />
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input autocomplete="on" required type="password" id="password" @bind="password" />
+                </div>
+                <div>
+                    <label for="confirmPassword">Confirm Password:</label>
+                    <input autocomplete="on" required type="password" id="confirmPassword" @bind="confirmPassword" />
+                </div>
+                <div>
+                    <button @onclick="DoRegisterAsync">Register</button>
+                </div>
+            </div>
+        }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool success, errors;
+    private string email = string.Empty, password = string.Empty, confirmPassword = string.Empty;
+    private string[] errorList = [];
+
+    public async Task DoRegisterAsync(){
+        success = errors = false;
+        errorList = [];
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            errors = true;
+            errorList = new string[] { "Email, password, and confirm password are required." };
+            return;
+        }
+        if (password != confirmPassword)
+        {
+            errors = true;
+            errorList = new string[] { "Password and confirm password do not match." };
+            return;
+        }
+
+        var task = await Acct.RegisterAsync(email, password);
+        var result = task;
+        if (result.Succeeded)
+        {
+            success = true;
+            email = password = confirmPassword = string.Empty;
+        }
+        else
+        {
+            errors = true;
+            errorList = result.ErrorList;
+        }
+    }
+}

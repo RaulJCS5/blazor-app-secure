@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Web App",
+    "Projects": [
+      {
+        "Path": "identitywebapiauthentication\\identitywebapiauthentication.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      },
+      {
+        "Path": "BlazorAppIdentity\\BlazorAppIdentity.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]
