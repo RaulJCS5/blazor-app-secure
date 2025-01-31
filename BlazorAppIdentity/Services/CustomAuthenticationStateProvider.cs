@@ -15,6 +15,11 @@ namespace BlazorAppIdentity.Services
 
         private readonly HttpClient _client;
 
+        private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
         public CustomAuthenticationStateProvider(IHttpClientFactory clientFactory)
         {
             _client = clientFactory.CreateClient("Auth");
@@ -24,7 +29,56 @@ namespace BlazorAppIdentity.Services
             _authenticated = false;
 
             var user = Unauthenticated;
-            
+
+            try
+            {
+                var userResponse = await _client.GetAsync("manage/info");
+
+                userResponse.EnsureSuccessStatusCode();
+
+                var userJson = await userResponse.Content.ReadAsStringAsync();
+
+                var userInfo = JsonSerializer.Deserialize<UserInfo>(userJson, jsonSerializerOptions);
+
+                if (userInfo != null)
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, userInfo.Email),
+                        new Claim(ClaimTypes.Email, userInfo.Email),
+                    };
+                    claims.AddRange(
+                        userInfo.Claims.Where(c => c.Key != ClaimTypes.Name && c.Key != ClaimTypes.Email).Select(c => new Claim(c.Key, c.Value))
+                    );
+
+                    var roleResponse = await _client.GetAsync($"api/Role/GetUserRoles?userEmail={userInfo.Email}");
+
+                    roleResponse.EnsureSuccessStatusCode();
+
+                    var roleJson = await roleResponse.Content.ReadAsStringAsync();
+
+                    var roles = JsonSerializer.Deserialize<string[]>(roleJson, jsonSerializerOptions);
+
+                    if (roles != null && roles.Length > 0)
+                    {
+                        foreach (var role in roles)
+                        {
+                            claims.Add(new (ClaimTypes.Role, role));
+                        }
+                    }
+                    // Create a new ClaimsIdentity with the claims and the cookie authentication
+                    var id = new ClaimsIdentity(claims, nameof(CustomAuthenticationStateProvider));
+
+                    user = new ClaimsPrincipal(id);
+
+                    _authenticated = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
             return new AuthenticationState(user);
         }
 
@@ -65,6 +119,25 @@ namespace BlazorAppIdentity.Services
             {
                 throw;
             }
+        }
+
+        public async Task<FormResult> LoginAsync(string email, string password)
+        {
+            try
+            {
+                var result = await _client.PostAsJsonAsync("login?useCookies=true", new { email, password });
+
+                if (result.IsSuccessStatusCode)
+                {
+                    NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+                    return new FormResult { Succeeded = true };
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return new FormResult { Succeeded = false, ErrorList = ["Invalid login attempt."] };
         }
     }
 }

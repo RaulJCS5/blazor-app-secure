@@ -1,0 +1,63 @@
+﻿@page "/login"
+@using BlazorAppIdentity.Services
+@inject IAccountManagement Acct
+<h3>Login</h3>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="alert alert-success">You are already logged in as @context.User.Identity?.Name</div>
+    </Authorized>
+    <NotAuthorized>
+        @if (errors)
+        {
+            @foreach (var error in errorList)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+        }
+        <div class="flex-outer">
+            <div>
+                <label for="email">Email</label>
+                <input required name="emailInput" type="email" id="email" @bind="email" />
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input required name="passwordInput" type="password" id="password" @bind="password" />
+            </div>
+            <div>
+                <button @onclick="DoLoginAsync">Login</button>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool success, errors;
+    private string email = string.Empty, password = string.Empty;
+    private string[] errorList = [];
+
+    public async Task DoLoginAsync()
+    {
+        success = errors = false;
+        errorList = [];
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errors = true;
+            errorList = new string[] { "Email and Password are required" };
+            return;
+        }
+        var result = await Acct.LoginAsync(email, password);
+
+        if (result.Succeeded)
+        {
+            success = true;
+            email = password = string.Empty;
+        }
+        else
+        {
+            errors = true;
+            errorList = errorList = result.ErrorList;
+        }
+    }
+}
