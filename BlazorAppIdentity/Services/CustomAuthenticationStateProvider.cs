@@ -51,7 +51,7 @@ namespace BlazorAppIdentity.Services
                         userInfo.Claims.Where(c => c.Key != ClaimTypes.Name && c.Key != ClaimTypes.Email).Select(c => new Claim(c.Key, c.Value))
                     );
 
-                    var roleResponse = await _client.GetAsync($"api/Role/GetUserRoles?userEmail={userInfo.Email}");
+                    var roleResponse = await _client.GetAsync($"api/role/GetUserRoles?emailId={userInfo.Email}");
 
                     roleResponse.EnsureSuccessStatusCode();
 
@@ -76,7 +76,8 @@ namespace BlazorAppIdentity.Services
             }
             catch (Exception ex)
             {
-                throw;
+                // if it is not authenticated it should not return an exception
+                //throw;
             }
 
             return new AuthenticationState(user);
