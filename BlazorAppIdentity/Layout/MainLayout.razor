@@ -6,9 +6,16 @@
 
     <main>
         <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    Logged in as: <strong>@context.User.Identity.Name</strong> <a href="logout"> <span>Logout</span> </a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="register"> <span>Register</span> </a>
+                    <a href="login"> <span>Login</span> </a>
+                </NotAuthorized>
+            </AuthorizeView>
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-            <a href="register"> <span>Register</span> </a>
-            <a href="login"> <span>Login</span> </a>
         </div>
 
         <article class="content px-4">

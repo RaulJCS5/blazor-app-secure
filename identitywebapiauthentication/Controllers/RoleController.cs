@@ -27,7 +27,7 @@ namespace identitywebapiauthentication.Controllers
             return Ok(roles);
         }
 
-        [Authorize(Roles = "admin, user")]
+        [Authorize]
         [HttpGet]
         [Route("GetUserRoles")]
         public async Task<IActionResult> GetUserRoles(string emailId)
