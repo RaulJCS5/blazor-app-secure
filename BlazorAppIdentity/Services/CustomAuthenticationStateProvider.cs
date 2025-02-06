@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 
 namespace BlazorAppIdentity.Services
@@ -139,6 +140,24 @@ namespace BlazorAppIdentity.Services
                 throw;
             }
             return new FormResult { Succeeded = false, ErrorList = ["Invalid login attempt."] };
+        }
+
+        public async Task LogoutAsync()
+        {
+            const string Empty = "{}";
+
+            var emptyContent = new StringContent(Empty, Encoding.UTF8, "application/json");
+
+            await _client.PostAsync("api/user/Logout", emptyContent);
+
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+
+        }
+
+        public async Task<bool> CheckAuthenticatedAsync()
+        {
+            await GetAuthenticationStateAsync();
+            return _authenticated;
         }
     }
 }
