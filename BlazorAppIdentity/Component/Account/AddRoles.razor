@@ -1,0 +1,114 @@
+﻿@page "/AddRoles"
+@using BlazorAppIdentity.Model
+@using BlazorAppIdentity.Services
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "admin")]
+@inject IAccountManagement Acct
+<h3>AddRoles</h3>
+
+@if (roleList?.Count > 0)
+{
+    <ul>
+        @foreach (var role in roleList)
+        {
+            <li>@role.Name</li>
+        }
+    </ul>
+}
+
+<h1>@message</h1>
+
+@if (Roles?.Count == 0)
+{
+    <div>
+        <input type="text" @bind="NewRole" />
+        <button @onclick="AddRole">Add Role</button>
+    </div>
+}
+else
+{
+    @foreach (var role in Roles)
+    {
+        var role1 = role;
+        <div>
+            <input disabled type="text" @bind="role1" />
+            <button @onclick="() => RemoveRole(role)">Remove Role</button>
+        </div>
+    }
+    <div>
+        <input type="text" @bind="NewRole" />
+        <button @onclick="AddRole">Add Role</button>
+    </div>
+
+    <div>
+        <button @onclick="SubmitRole">Submit</button>
+    </div>
+
+}
+<h1>@submitMessage</h1>
+
+@code {
+    string submitMessage = string.Empty;
+    string message = string.Empty;
+    List<string> Roles = new List<string>();
+    List<Role> roleList = new List<Role>();
+    string NewRole { get; set; }
+
+    override protected async Task OnInitializedAsync()
+    {
+        GetRoles();
+        base.OnInitialized();
+    }
+
+    private async void GetRoles()
+    {
+        var list = await Acct.GetRolesAsync();
+        roleList = list.ToList();
+        StateHasChanged();
+    }
+
+    private void AddRole()
+    {
+        if (!string.IsNullOrWhiteSpace(NewRole))
+        {
+            var isExistRole = Roles.Exists(x => x.Contains(NewRole));
+            if (!isExistRole)
+            {
+                Roles.Add(NewRole);
+                message = "Role added";
+            }
+            else
+            {
+                message = "Already exists";
+                return;
+            }
+            NewRole = string.Empty;
+        }
+    }
+
+    private void RemoveRole(string role)
+    {
+        Roles.Remove(role);
+        message = "Role removed";
+    }
+
+    private async void SubmitRole()
+    {
+        submitMessage = string.Empty;
+        var response = await Acct.AddRoleAsync(Roles.ToArray());
+        if (response.Succeeded)
+        {
+            submitMessage = "Role added successfully";
+            // Roles.Clear();
+            Roles = new List<string>();
+            GetRoles();
+        }
+        else
+        {
+            submitMessage = "Role not added";
+        }
+        GetRoles();
+    }
+
+}

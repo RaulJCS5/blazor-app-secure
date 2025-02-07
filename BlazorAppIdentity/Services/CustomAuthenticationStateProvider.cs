@@ -159,5 +159,45 @@ namespace BlazorAppIdentity.Services
             await GetAuthenticationStateAsync();
             return _authenticated;
         }
+
+        public async Task<List<Role>> GetRolesAsync()
+        {
+            try
+            {
+                var result = await _client.GetAsync("api/role/GetRoles");
+                var response = await result.Content.ReadAsStringAsync();
+                var roles = JsonSerializer.Deserialize<List<Role>>(response, jsonSerializerOptions);
+                if(result.IsSuccessStatusCode)
+                {
+                    return roles;
+                }
+            }
+            catch (Exception ex)
+            {
+                //throw;
+            }
+            return new List<Role>();
+        }
+
+        public async Task<FormResult> AddRoleAsync(string[] roles)
+        {
+            try
+            {
+
+                var content = new StringContent(JsonSerializer.Serialize(roles), Encoding.UTF8, "application/json");
+                var result = await _client.PostAsync("api/role/AddRoles", content);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    return new FormResult { Succeeded = true };
+                }
+            }
+            catch (Exception ex)
+            {
+                //throw;
+            }
+
+            return new FormResult { Succeeded = false, ErrorList = ["An unknown error prevented the role from being added."] };
+        }
     }
 }
