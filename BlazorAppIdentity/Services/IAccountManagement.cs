@@ -12,5 +12,6 @@ namespace BlazorAppIdentity.Services
         public Task<FormResult> AddRoleAsync(string[] roles);
         public Task<UserViewModel[]> GetUsers();
         public Task<UserViewModel> GetUserByEmail(string userEmailId);
+        public Task<bool> UserUpdate(string userEmailId, UserViewModel user);
     }
 }

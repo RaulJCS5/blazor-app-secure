@@ -3,6 +3,7 @@
 @using BlazorAppIdentity.Services
 
 @inject IAccountManagement Acct
+@inject NavigationManager Navigation
 <h3>Users</h3>
 
 <div class="grid" tabindex="-1">
@@ -48,12 +49,12 @@
     {
         var users = await Acct.GetUsers();
         userList = users.ToList().AsQueryable();
-        base.OnInitializedAsync();
+        await base.OnInitializedAsync();
     }
 
     void Edit(UserViewModel user)
     {
-
+        Navigation.NavigateTo($"/editupdateuser/{user.Email}");
     }
 
     async void Delete(UserViewModel user)

@@ -1,0 +1,120 @@
+﻿@page "/editupdateuser/{emailId}"
+@using BlazorAppIdentity.Model
+@using BlazorAppIdentity.Services
+
+@inject IAccountManagement Acct
+@inject NavigationManager NavigationManager
+<h3>EditUpdateUser</h3>
+
+@if (userModel != null){
+    <EditForm Model="@userModel" OnValidSubmit="@UpdateUser">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <InputText id="name" class="form-control disabled" @bind-Value="userModel.UserName"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="description">Email:</label>
+            <InputText id="description" class="form-control" @bind-Value="userModel.Email"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="description">Phone Number:</label>
+            <InputText id="description" class="form-control" @bind-Value="userModel.PhoneNumber"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="userRole">Roles:</label>
+            <InputSelect id="userrole" class="form-control" @bind-Value="SelectedRoles" multiple>
+                @if (userModel.Roles != null)
+                {
+                    @foreach (var role in userModel.Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                }
+                else{
+                    <option value="">No roles available</option>
+                }
+            </InputSelect>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </EditForm>
+}
+else{
+    <p><em>Loading...</em></p>
+}
+
+@code {
+
+    [Parameter]
+    public string emailId { get; set; }
+    private UserViewModel userModel = new UserViewModel();
+
+    private string[] SelectedRoles = new string[] { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userModel = await Acct.GetUserByEmail(emailId);
+            if (userModel != null)
+            {
+                SelectedRoles = userModel.Roles?.ToArray() ?? Array.Empty<string>();
+            }
+            else
+            {
+                SelectedRoles = Array.Empty<string>();
+            }
+
+            var roles = await Acct.GetRolesAsync();
+            if (roles != null)
+            {
+                userModel.Roles = roles.Select(x => x.Name).ToList();
+            }
+            else
+            {
+                userModel.Roles = new List<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task UpdateUser()
+    {
+        try
+        {
+            // Ensure SelectedRoles is not null
+            userModel.Roles = SelectedRoles?.ToList() ?? new List<string>();
+
+            // Attempt to update the user
+            var updateResult = await Acct.UserUpdate(emailId, userModel);
+            if (updateResult)
+            {
+                NavigationManager.NavigateTo("/users");
+                return;
+            }
+
+            // Fetch roles again if update fails
+            var roles = await Acct.GetRolesAsync();
+            if (roles != null)
+            {
+                userModel.Roles = roles.Select(x => x.Name).ToList();
+            }
+            else
+            {
+                userModel.Roles = new List<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

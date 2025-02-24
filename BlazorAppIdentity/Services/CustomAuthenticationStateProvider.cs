@@ -236,5 +236,27 @@ namespace BlazorAppIdentity.Services
             }
             return null;
         }
+
+        public async Task<bool> UserUpdate(string userEmailId, UserViewModel user)
+        {
+            try
+            {
+                var content = new StringContent(JsonSerializer.Serialize(user),
+            Encoding.UTF8, "application/json");
+                // Make sure the UserViewModel is fully populated with the correct data
+                // For example I got problems because the PhoneNumbe was not set
+                // And it always returned 400 Bad Request
+                // Message=Value cannot be null.
+                var response = await _client.PutAsync($"api/User/{userEmailId}", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response: {responseContent}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return false;
+        }
     }
 }

@@ -39,8 +39,7 @@ namespace identitywebapiauthentication.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPut("{emailId}")]
-        public async Task<IActionResult> UpdateUser
-            (string emailId, [FromBody] UserModel user)
+        public async Task<IActionResult> UpdateUser(string emailId, [FromBody] UserModel user)
         {
             var result = await _userService.UpdateUser(emailId, user);
             if (!result)
