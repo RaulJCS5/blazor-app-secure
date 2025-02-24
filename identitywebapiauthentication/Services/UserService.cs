@@ -42,6 +42,12 @@ namespace identitywebapiauthentication.Services
         public async Task<UserModel> GetUserById(string emailId)
         {
             var user = await _userManager.FindByEmailAsync(emailId);
+            if (user == null)
+            {
+                // Handle the case where the user is not found
+                return null; // or throw an exception, or return a default UserModel, depending on your requirements
+            }
+
             var userRoles = await _userManager.GetRolesAsync(user);
             var userModel = new UserModel
             {

@@ -64,7 +64,7 @@ namespace BlazorAppIdentity.Services
                     {
                         foreach (var role in roles)
                         {
-                            claims.Add(new (ClaimTypes.Role, role));
+                            claims.Add(new(ClaimTypes.Role, role));
                         }
                     }
                     // Create a new ClaimsIdentity with the claims and the cookie authentication
@@ -167,7 +167,7 @@ namespace BlazorAppIdentity.Services
                 var result = await _client.GetAsync("api/role/GetRoles");
                 var response = await result.Content.ReadAsStringAsync();
                 var roles = JsonSerializer.Deserialize<List<Role>>(response, jsonSerializerOptions);
-                if(result.IsSuccessStatusCode)
+                if (result.IsSuccessStatusCode)
                 {
                     return roles;
                 }
@@ -198,6 +198,43 @@ namespace BlazorAppIdentity.Services
             }
 
             return new FormResult { Succeeded = false, ErrorList = ["An unknown error prevented the role from being added."] };
+        }
+
+        public async Task<UserViewModel[]> GetUsers()
+        {
+            try
+            {
+                var result = await _client.GetAsync("api/user");
+                var response = await result.Content.ReadAsStringAsync();
+                var userlist = JsonSerializer.Deserialize<UserViewModel[]>(response, jsonSerializerOptions);
+                if (result.IsSuccessStatusCode)
+                {
+                    return userlist;
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return null;
+        }
+
+        public async Task<UserViewModel> GetUserByEmail(string userEmailId)
+        {
+            try
+            {
+                var result = await _client.GetAsync($"api/user/{userEmailId}");
+                var response = await result.Content.ReadAsStringAsync();
+                var user = JsonSerializer.Deserialize<UserViewModel>(response, jsonSerializerOptions);
+                if (result.IsSuccessStatusCode)
+                {
+                    return user;
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            return null;
         }
     }
 }

@@ -10,5 +10,7 @@ namespace BlazorAppIdentity.Services
         public Task<bool> CheckAuthenticatedAsync();
         public Task<List<Role>> GetRolesAsync();
         public Task<FormResult> AddRoleAsync(string[] roles);
+        public Task<UserViewModel[]> GetUsers();
+        public Task<UserViewModel> GetUserByEmail(string userEmailId);
     }
 }

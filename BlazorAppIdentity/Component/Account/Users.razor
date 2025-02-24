@@ -1,0 +1,63 @@
+﻿@page "/users"
+@using BlazorAppIdentity.Model
+@using BlazorAppIdentity.Services
+
+@inject IAccountManagement Acct
+<h3>Users</h3>
+
+<div class="grid" tabindex="-1">
+    <QuickGrid Items="@userList">
+        <PropertyColumn Property="@(p=>p.UserName)" Sortable="true">
+        </PropertyColumn>
+        <PropertyColumn Property="@(p=>p.Email)" Sortable="true">
+        </PropertyColumn>
+        <TemplateColumn Title="Roles" Sortable="false">
+            <div class="flex items-center">
+                <nobr>
+                    @if(context.Roles != null && context.Roles?.Count > 0)
+                    {
+                        <ul>
+                            @foreach (var role in context.Roles)
+                            {
+                                <li>
+                                    <strong>@role</strong>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <strong>------</strong>
+                    }
+                </nobr>
+            </div>
+        </TemplateColumn>
+        <PropertyColumn Property="@(p=>p.PhoneNumber)" Sortable="true">
+        </PropertyColumn>
+        <TemplateColumn Title="Actions">
+            <button class="btn btn-primary" @onclick="@(()=>Edit(context))">Edit</button>
+            <button class="btn btn-danger" @onclick="@(()=>Delete(context))">Delete</button>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+
+@code {
+    private IQueryable<UserViewModel> userList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var users = await Acct.GetUsers();
+        userList = users.ToList().AsQueryable();
+        base.OnInitializedAsync();
+    }
+
+    void Edit(UserViewModel user)
+    {
+
+    }
+
+    async void Delete(UserViewModel user)
+    {
+
+    }
+}
