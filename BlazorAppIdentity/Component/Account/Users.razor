@@ -59,6 +59,12 @@
 
     async void Delete(UserViewModel user)
     {
-
+        var result = await Acct.UserDelete(user.Email);
+        if (result)
+        {
+            var users = await Acct.GetUsers();
+            userList = users.ToList().AsQueryable();
+            StateHasChanged();
+        }
     }
 }

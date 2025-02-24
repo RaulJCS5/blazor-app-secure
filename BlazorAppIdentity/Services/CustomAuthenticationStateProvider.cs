@@ -258,5 +258,18 @@ namespace BlazorAppIdentity.Services
             }
             return false;
         }
+
+        public async Task<bool> UserDelete(string userEmailId)
+        {
+            try
+            {
+                var response = await _client.DeleteAsync($"api/User/{userEmailId}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+            }
+            return false;
+        }
     }
 }
