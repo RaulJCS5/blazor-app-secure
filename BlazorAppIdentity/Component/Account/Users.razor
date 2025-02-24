@@ -36,25 +36,95 @@
         <PropertyColumn Property="@(p=>p.PhoneNumber)" Sortable="true">
         </PropertyColumn>
         <TemplateColumn Title="Actions">
-            <button class="btn btn-primary" @onclick="@(()=>Edit(context))">Edit</button>
+            <button class="btn btn-primary" @onclick="@(()=>Edit(context.Email))">Edit</button>
             <button class="btn btn-danger" @onclick="@(()=>Delete(context))">Delete</button>
         </TemplateColumn>
     </QuickGrid>
 </div>
 
+@if (userModel != null)
+{
+    <EditForm Model="@userModel" OnValidSubmit="@UpdateUser">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <InputText id="name" class="form-control disabled" @bind-Value="userModel.UserName"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="description">Email:</label>
+            <InputText id="description" class="form-control" @bind-Value="userModel.Email"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="description">Phone Number:</label>
+            <InputText id="description" class="form-control" @bind-Value="userModel.PhoneNumber"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="userRole">Roles:</label>
+            <InputSelect id="userrole" class="form-control" @bind-Value="SelectedRoles" multiple>
+                @if (userModel.Roles != null)
+                {
+                    @foreach (var role in userModel.Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                }
+                else
+                {
+                    <option value="">No roles available</option>
+                }
+            </InputSelect>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </EditForm>
+}
+else
+{
+
+}
+
 @code {
     private IQueryable<UserViewModel> userList;
+    private UserViewModel userModel = null;
+    private string[] SelectedRoles = new string[] { };
 
     protected override async Task OnInitializedAsync()
     {
         var users = await Acct.GetUsers();
         userList = users.ToList().AsQueryable();
+        userModel = null; // Clear the form
         await base.OnInitializedAsync();
     }
 
-    void Edit(UserViewModel user)
+    async Task Edit(string email)
     {
-        Navigation.NavigateTo($"/editupdateuser/{user.Email}");
+        try
+        {
+            userModel = await Acct.GetUserByEmail(email);
+            if (userModel != null)
+            {
+                SelectedRoles = userModel.Roles?.ToArray() ?? Array.Empty<string>();
+            }
+            else
+            {
+                SelectedRoles = Array.Empty<string>();
+            }
+
+            var roles = await Acct.GetRolesAsync();
+            if (roles != null)
+            {
+                userModel.Roles = roles.Select(x => x.Name).ToList();
+            }
+            else
+            {
+                userModel.Roles = new List<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+        }
     }
 
     async void Delete(UserViewModel user)
@@ -67,4 +137,41 @@
             StateHasChanged();
         }
     }
+
+    private async Task UpdateUser()
+    {
+        try
+        {
+            // Ensure SelectedRoles is not null
+            userModel.Roles = SelectedRoles?.ToList() ?? new List<string>();
+
+            // Attempt to update the user
+            var updateResult = await Acct.UserUpdate(userModel.Email, userModel);
+            if (updateResult)
+            {
+                // Refresh the user list
+                var users = await Acct.GetUsers();
+                userList = users.ToList().AsQueryable();
+                userModel = null; // Clear the form
+                return;
+            }
+
+            // Fetch roles again if update fails
+            var roles = await Acct.GetRolesAsync();
+            if (roles != null)
+            {
+                userModel.Roles = roles.Select(x => x.Name).ToList();
+            }
+            else
+            {
+                userModel.Roles = new List<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+        }
+    }
+
 }
