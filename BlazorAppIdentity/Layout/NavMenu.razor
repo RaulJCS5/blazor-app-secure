@@ -32,19 +32,53 @@
         <AuthorizeView Roles="admin">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="adminuser">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Admin user only
+                    <NavLink class="arrow right nav-link" @onclick="() => ToggleSubMenu(1)">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Admin
                     </NavLink>
-                    <NavLink class="nav-link" href="users">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> User List
-                    </NavLink>
-                    <NavLink class="nav-link" href="addroles">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Add Role
-                    </NavLink>
-
+                    @if (showSubMenu[1])
+                    {
+                        <nav class="flex-column">
+                            <div class="nav-item px-3">
+                                <NavLink class="nav-link" href="adminuser">
+                                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Admin user only
+                                </NavLink>
+                            </div>
+                            <div class="nav-item px-3">
+                                <NavLink class="nav-link" href="users">
+                                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> User List
+                                </NavLink>
+                            </div>
+                            <div class="nav-item px-3">
+                                <NavLink class="nav-link" href="addroles">
+                                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Add Role
+                                </NavLink>
+                            </div>
+                        </nav>
+                    }
                 </div>
             </Authorized>
         </AuthorizeView>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" @onclick="()=>ToggleSubMenu(2)">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Blog
+            </NavLink>
+            @if (showSubMenu[2])
+            {
+                <nav class="flex-column">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="blog/blogs">
+                            <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Blogs
+                        </NavLink>
+                    </div>
+                    @* <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="author/authors">
+                            <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> author list
+                        </NavLink>
+                    </div> *@
+                </nav>
+            }
+        </div>
     </nav>
 </div>
 
@@ -56,5 +90,21 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    bool[] showSubMenu = new bool[3];
+
+    void ToggleSubMenu(int index)
+    {
+        for (int i = 0; i < showSubMenu.Length; i++)
+        {
+            if (i == index)
+            {
+                showSubMenu[index] = !showSubMenu[index];
+            }
+            else{
+                showSubMenu[i] = false;
+            }
+        }
     }
 }
