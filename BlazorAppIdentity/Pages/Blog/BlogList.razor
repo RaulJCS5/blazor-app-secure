@@ -1,0 +1,107 @@
+﻿@page "/blog/blogs"
+@using BlazorAppIdentity.Model
+@using BlazorAppIdentity.Services
+@using Microsoft.AspNetCore.Components.QuickGrid
+@attribute [StreamRendering]
+
+@inject IBlogService _blogService
+@inject NavigationManager _navigation
+
+<h3>BlogList</h3>
+
+<div>
+    <div>Blog List - Basic</div>
+    <div>
+        <button class="btn btn-primary" @onclick="CreateBlog">Add Blog</button>
+    </div>
+</div>
+
+<div>
+    <QuickGrid Items="@blogs">
+        <PropertyColumn Property="@(p => p.Name)" Sortable="true"></PropertyColumn>
+        <PropertyColumn Property="@(p => p.Description)" Sortable="true"></PropertyColumn>
+
+        <TemplateColumn Align="Align.Center" Title="Actions">
+            <button class="btn btn-primary m-1" @onclick="() => EditBlog(context.Id)">Edit</button>
+            <button class="btn btn-danger m-1" @onclick="()=> ShowDeleteConfirmation(context.Id)">Delete</button>
+            <button class="btn btn btn-success m-1" @onclick="() => ViewContact(context.Id)">View</button>
+        </TemplateColumn>
+
+    </QuickGrid>
+</div>
+
+@if (showDeleteConfirmation)
+{
+    <div class="confirmation-modal">
+        <h3>Confirmation Deletion</h3>
+        <p>Are you sure you want to delete this blog?</p>
+        <div>
+            <AuthorizeView Roles="admin">
+                <Authorized>
+                    <button class="btn btn-danger" @onclick="DeleteBlog">Yes</button>
+                </Authorized>
+            </AuthorizeView>
+            <button class="btn btn-primary" @onclick="CancelDelete">No</button>
+        </div>
+    </div>
+}
+
+@code {
+
+    private IQueryable<BlogViewModel> blogs = null!;
+    private int deleteId;
+    private bool showDeleteConfirmation = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBlogs();
+        base.OnInitialized();
+    }
+
+    private async Task LoadBlogs()
+    {
+        var result = await _blogService.GetAllAsync();
+        blogs = result.AsQueryable();
+        StateHasChanged();
+    }
+
+    private void CreateBlog()
+    {
+        _navigation.NavigateTo("/blogs/edit/0");
+    }
+
+    private void EditBlog(int id)
+    {
+        _navigation.NavigateTo($"/blogs/edit/{id}");
+    }
+
+    private void ShowDeleteConfirmation(int id)
+    {
+        deleteId = id;
+        showDeleteConfirmation = true;
+    }
+
+    private void CloseConfirmationModal()
+    {
+        showDeleteConfirmation = false;
+        deleteId = 0;
+    }
+
+    private async void DeleteBlog()
+    {
+        await _blogService.DeleteAsync(deleteId);
+        CloseConfirmationModal();
+        await LoadBlogs();
+    }
+
+    private void CancelDelete()
+    {
+        CloseConfirmationModal();
+    }
+
+    private void ViewContact(int id)
+    {
+        _navigation.NavigateTo($"/blogdetails/{id}");
+    }
+
+}

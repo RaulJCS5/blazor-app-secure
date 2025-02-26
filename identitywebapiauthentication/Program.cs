@@ -21,6 +21,8 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>()
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+builder.Services.AddScoped<IBlogService, BlogService>();
+
 builder.Services.AddControllers();
 
 // Add Swagger services

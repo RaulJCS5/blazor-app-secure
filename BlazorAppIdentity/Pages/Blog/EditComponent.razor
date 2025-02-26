@@ -1,0 +1,102 @@
+﻿@page "/blogs/edit/{blogId:int}"
+@using BlazorAppIdentity.Model
+@using BlazorAppIdentity.Services
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "admin")]
+@inject IBlogService _blogService
+@inject NavigationManager _navigation
+<h3>@(blogId > 0 ? "Update" : "Create")</h3>
+
+
+@if (isNotFound)
+{
+    <p><em>Blog post not found.</em></p>
+}
+else if (blog == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <EditForm Model="blog" OnValidSubmit="UpdateProduct">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <InputText id="name" class="form-control" @bind-Value="blog.Name"></InputText>
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputText id="description" class="form-control" @bind-Value="blog.Description"></InputText>
+        </div>
+        <button type="submit" class="btn btn-primary">@(blogId > 0 ? "Update" : "Create")</button>
+    </EditForm>
+}
+
+@code {
+    private BlogViewModel blog;
+    private bool isNotFound = false;
+    [Parameter]
+    public int blogId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        LoadBlog();
+        base.OnParametersSet();
+    }
+
+    private async void LoadBlog()
+    {
+        try
+        {
+            if (blogId > 0)
+            {
+                blog = await _blogService.GetByIdAsync(blogId);
+                if (blog == null)
+                {
+                    isNotFound = true;
+                }
+            }
+            else
+            {
+                blog = new BlogViewModel();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+            isNotFound = true;
+        }
+        StateHasChanged();
+    }
+
+    private async void UpdateProduct()
+    {
+        if (isNotFound)
+        {
+            // Handle the case where the blog is not found
+            Console.WriteLine("Cannot update a blog that does not exist.");
+            return;
+        }
+
+        try
+        {
+            if (blogId > 0)
+            {
+                await _blogService.UpdateAsync(blogId, blog);
+            }
+            else
+            {
+                await _blogService.CreateAsync(blog);
+            }
+            _navigation.NavigateTo("/blog/blogs");
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

@@ -13,6 +13,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddTransient<CustomHttpHandler>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped(sp=> (IAccountManagement)sp.GetRequiredService<AuthenticationStateProvider>());
+builder.Services.AddScoped<IBlogService, BlogService>();
 
 builder.Services.AddScoped( sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:7130") });
 
