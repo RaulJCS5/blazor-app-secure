@@ -1,0 +1,42 @@
+@EmployeeAdminPortal_HostAddress = https://localhost:7081
+
+GET {{EmployeeAdminPortal_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{EmployeeAdminPortal_HostAddress}}/api/employees
+
+###
+
+POST {{EmployeeAdminPortal_HostAddress}}/api/employees
+Content-Type: application/json
+
+{
+  "name":"Jony Depth",
+  "email": "jony@gmail.com",
+  "phone": "999999999",
+  "Salary": 2000.45
+}
+
+###
+
+GET {{EmployeeAdminPortal_HostAddress}}/api/employees/01954c9c-6c45-7861-8a1d-236e37605c36
+
+###
+
+PUT {{EmployeeAdminPortal_HostAddress}}/api/Employees/01954c9c-6c45-7861-8a1d-236e37605c36
+Content-Type: application/json
+
+{
+  "name":"Jony Depth",
+  "email": "jonyupdated@gmail.com",
+  "phone": "999999999",
+  "salary": 2000.45
+}
+
+###
+
+DELETE {{EmployeeAdminPortal_HostAddress}}/api/employees/01954cb4-f868-7dc4-bb43-373519be8b7a
+
+###

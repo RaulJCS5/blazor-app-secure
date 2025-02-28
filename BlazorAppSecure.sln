@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "identitywebapiauthenticatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAppIdentity", "BlazorAppIdentity\BlazorAppIdentity.csproj", "{DBF84341-F370-43BD-A519-9EEB40A2B83B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmployeeAdminPortal", "EmployeeAdminPortal\EmployeeAdminPortal.csproj", "{D4F72E07-232F-4D2F-98F4-2F05DCC37AA5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{DBF84341-F370-43BD-A519-9EEB40A2B83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DBF84341-F370-43BD-A519-9EEB40A2B83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DBF84341-F370-43BD-A519-9EEB40A2B83B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4F72E07-232F-4D2F-98F4-2F05DCC37AA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4F72E07-232F-4D2F-98F4-2F05DCC37AA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4F72E07-232F-4D2F-98F4-2F05DCC37AA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4F72E07-232F-4D2F-98F4-2F05DCC37AA5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
