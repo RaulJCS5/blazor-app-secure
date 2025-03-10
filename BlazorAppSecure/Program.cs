@@ -4,10 +4,12 @@ using BlazorAppSecure.Database;
 using BlazorAppSecure.Extensions;
 using BlazorAppSecure.Handlers;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 
@@ -57,7 +59,19 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 })
-    .AddIdentityCookies();
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    var oidcConfig = builder.Configuration.GetSection("OpenIdConnect");
+
+    options.Authority = oidcConfig["Authority"];
+    options.ClientId = oidcConfig["ClientId"];
+    options.ClientSecret = oidcConfig["ClientSecret"];
+
+    options.CallbackPath = "/signin-oidc";  // Must match the redirect URI registered in OpenID provider
+    options.SignedOutRedirectUri = "/"; // Redirect to home page after sign out
+})
+.AddIdentityCookies();
+
 
 builder.Services.AddAuthorization();
 

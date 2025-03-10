@@ -141,3 +141,53 @@ docker-compose.yml
   ```ignore
   **/.containers
   ```
+
+## OpenID Connect Configuration
+
+The **Authority** in your **OpenID Connect (OIDC)** settings should point to your **Identity Provider (IdP)**. This is the URL where your Blazor Server app will send authentication requests.  
+
+### **What Should Be in `Authority`?**
+The **Authority** value should be the **base URL** of your OIDC provider, such as:
+
+| Identity Provider | Example `Authority` URL |
+|------------------|------------------------|
+| **Microsoft Entra ID (Azure AD)** | `https://login.microsoftonline.com/{tenantId}/v2.0` |
+| **Google Identity Platform** | `https://accounts.google.com` |
+| **Okta** | `https://{yourOktaDomain}` |
+| **Auth0** | `https://{yourDomain}.auth0.com` |
+| **Keycloak** | `https://your-keycloak-domain/realms/{realm-name}` |
+| **Duende IdentityServer** | `https://your-identityserver-url` |
+
+### **Example for Azure AD:**
+```json
+"OpenIdConnect": {
+  "Authority": "https://login.microsoftonline.com/your-tenant-id/v2.0",
+  "ClientId": "your-client-id",
+  "ClientSecret": "your-client-secret"
+}
+```
+> **Replace `your-tenant-id` with your actual Azure tenant ID**.
+
+### **Example for Okta:**
+```json
+"OpenIdConnect": {
+  "Authority": "https://dev-123456.okta.com",
+  "ClientId": "your-client-id",
+  "ClientSecret": "your-client-secret"
+}
+```
+
+### **How to Find Your Authority URL?**
+1. **For Azure AD**:  
+   - Go to **Microsoft Entra ID (Azure AD)** in the **Azure portal**.
+   - Navigate to **App registrations** ? Select your app.
+   - Find the **Issuer URL** under **Endpoints**.
+
+2. **For Google**:  
+   - The `Authority` is always `https://accounts.google.com`.
+
+3. **For Okta/Auth0/Keycloak**:  
+   - Log in to your provider's admin panel.
+   - Find the **issuer URL** (sometimes under OIDC settings).
+
+Would you like help with a specific **OIDC provider**?
