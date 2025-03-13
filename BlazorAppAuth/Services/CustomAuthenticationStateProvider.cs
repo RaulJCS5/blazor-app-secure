@@ -23,12 +23,14 @@ namespace BlazorAppAuth.Services
         private readonly IUserService _userService;
         private readonly IRoleService _roleService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<CustomAuthenticationStateProvider> _logger;
 
-        public CustomAuthenticationStateProvider(IUserService userService, IRoleService roleService, IHttpContextAccessor httpContextAccessor)
+        public CustomAuthenticationStateProvider(IUserService userService, IRoleService roleService, IHttpContextAccessor httpContextAccessor, ILogger<CustomAuthenticationStateProvider> logger)
         {
             _userService = userService;
             _roleService = roleService;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
@@ -44,8 +46,14 @@ namespace BlazorAppAuth.Services
                 {
                     return new AuthenticationState(user);
                 }
+
                 var userServiceInfo = await _userService.GetUserInfoAsync(userName);
 
+                if (userServiceInfo == null)
+                {
+                    _logger.LogWarning("User info not found for {UserName}", userName);
+                    return new AuthenticationState(user);
+                }
                 var userJson = JsonSerializer.Serialize(userServiceInfo, jsonSerializerOptions);
 
                 var userInfo = JsonSerializer.Deserialize<UserInfo>(userJson, jsonSerializerOptions);
@@ -61,27 +69,18 @@ namespace BlazorAppAuth.Services
                         userInfo.Claims.Where(c => c.Key != ClaimTypes.Name && c.Key != ClaimTypes.Email).Select(c => new Claim(c.Key, c.Value))
                     );
 
-                    var roles = await _roleService.GetUserRolesAsync(userInfo.Email);
+                    var roles = await _roleService.GetUserRolesAsync(userInfo.Email) ?? new List<string>();
 
-                    if (roles != null && roles.Count > 0)
-                    {
-                        foreach (var role in roles)
-                        {
-                            claims.Add(new(ClaimTypes.Role, role));
-                        }
-                    }
-                    // Create a new ClaimsIdentity with the claims and the cookie authentication
-                    var id = new ClaimsIdentity(claims, nameof(CustomAuthenticationStateProvider));
+                    claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-                    user = new ClaimsPrincipal(id);
+                    user = new ClaimsPrincipal(new ClaimsIdentity(claims, nameof(CustomAuthenticationStateProvider)));
 
                     _authenticated = true;
                 }
             }
             catch (Exception ex)
             {
-                // if it is not authenticated it should not return an exception
-                //throw;
+                _logger.LogError(ex, "Error retrieving authentication state.");
             }
 
             return new AuthenticationState(user);
@@ -98,16 +97,13 @@ namespace BlazorAppAuth.Services
             try
             {
                 var roles = await _roleService.GetRolesAsync();
-                if (roles != null)
-                {
-                    return roles.Select(x => new Role { Name = x.Name }).ToList();
-                }
+                return roles?.Select(x => new Role { Name = x.Name }).ToList() ?? new List<Role>();
             }
             catch (Exception ex)
             {
-                //throw;
+                _logger.LogError(ex, "Error retrieving roles.");
+                return new List<Role>();
             }
-            return new List<Role>();
         }
 
         public async Task<FormResult> AddRoleAsync(string[] roles)
@@ -115,17 +111,15 @@ namespace BlazorAppAuth.Services
             try
             {
                 var result = await _roleService.AddRolesAsync(roles);
-                if (result.Count != 0)
-                {
-                    return new FormResult { Succeeded = true };
-                }
+                return result.Count > 0
+                    ? new FormResult { Succeeded = true }
+                    : new FormResult { Succeeded = false, ErrorList = ["No roles were added."] };
             }
             catch (Exception ex)
             {
-                //throw;
+                _logger.LogError(ex, "Error adding roles.");
+                return new FormResult { Succeeded = false, ErrorList = ["An error occurred while adding roles."] };
             }
-
-            return new FormResult { Succeeded = false, ErrorList = ["An unknown error prevented the role from being added."] };
         }
 
         public async Task<UserViewModel[]> GetUsers()
@@ -133,23 +127,19 @@ namespace BlazorAppAuth.Services
             try
             {
                 var userList = await _userService.GetAllUsers();
-                if (userList != null)
+                return userList?.Select(x => new UserViewModel
                 {
-                    var users = userList.Select(x => new UserViewModel
-                    {
-                        Email = x.Email,
-                        UserName = x.UserName,
-                        PhoneNumber = x.PhoneNumber,
-                        Roles = x.Roles
-                    }).ToArray();
-                    return users;
-                }
+                    Email = x.Email,
+                    UserName = x.UserName,
+                    PhoneNumber = x.PhoneNumber,
+                    Roles = x.Roles
+                }).ToArray() ?? Array.Empty<UserViewModel>();
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex, "Error retrieving users.");
+                return Array.Empty<UserViewModel>();
             }
-            return null;
         }
 
         public async Task<UserViewModel> GetUserByEmail(string userEmailId)
@@ -157,56 +147,51 @@ namespace BlazorAppAuth.Services
             try
             {
                 var userModel = await _userService.GetUserById(userEmailId);
-                if (userModel != null)
+                return userModel == null ? null : new UserViewModel
                 {
-                    var user = new UserViewModel
-                    {
-                        Email = userModel.Email,
-                        UserName = userModel.UserName,
-                        PhoneNumber = userModel.PhoneNumber,
-                        Roles = userModel.Roles
-                    };
-                    return user;
-                }
+                    Email = userModel.Email,
+                    UserName = userModel.UserName,
+                    PhoneNumber = userModel.PhoneNumber,
+                    Roles = userModel.Roles
+                };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving user by email: {UserEmail}", userEmailId);
+                return null;
             }
-            return null;
         }
 
         public async Task<bool> UserUpdate(string userEmailId, UserViewModel user)
         {
             try
             {
-                // TODO: Do not this UserViewModel to UserModel conversion here.
-                var result = await _userService.UpdateUser(userEmailId, new Model.UserModel
+                return await _userService.UpdateUser(userEmailId, new Model.UserModel
                 {
                     Email = user.Email,
                     UserName = user.UserName,
                     PhoneNumber = user.PhoneNumber,
                     Roles = user.Roles
                 });
-                return result;
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex, "Error updating user: {UserEmail}", userEmailId);
+                return false;
             }
-            return false;
         }
 
         public async Task<bool> UserDelete(string userEmailId)
         {
             try
             {
-                var result = await _userService.DeleteUserByEmail(userEmailId);
-                return result;
+                return await _userService.DeleteUserByEmail(userEmailId);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error deleting user: {UserEmail}", userEmailId);
+                return false;
             }
-            return false;
         }
     }
 }
