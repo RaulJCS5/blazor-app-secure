@@ -7,7 +7,6 @@ namespace BlazorAppAuth.Services
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
         private readonly IRoleService _roleService;
         public UserService(UserManager<User> userManager, IRoleService roleService)
         {
@@ -66,32 +65,6 @@ namespace BlazorAppAuth.Services
         {
             var user = await _userManager.FindByEmailAsync(userId);
             return user;
-        }
-
-        public async Task<SignInResult> LoginAsync(string email, string password, bool rememberMe)
-        {
-            var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
-            return result;
-        }
-
-        public async Task LogoutAsync()
-        {
-            await _signInManager.SignOutAsync();
-        }
-
-        public async Task<User> RegisterAsync(string email, string password)
-        {
-            var user = new User
-            {
-                UserName = email,
-                Email = email
-            };
-            var result = await _userManager.CreateAsync(user, password);
-            if (result.Succeeded)
-            {
-                return user;
-            }
-            return null;
         }
 
         public async Task<bool> UpdateUser(string emailId, UserModel user)

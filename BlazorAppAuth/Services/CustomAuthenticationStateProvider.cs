@@ -87,55 +87,6 @@ namespace BlazorAppAuth.Services
             return new AuthenticationState(user);
         }
 
-        public async Task<FormResult> RegisterAsync(string email, string password)
-        {
-            string[] defaultDetail = ["An unkown error prevented registration from succeeding."];
-
-            try
-            {
-                var result = await _userService.RegisterAsync(email, password);
-                if (result != null)
-                {
-                    return new FormResult { Succeeded = true };
-                }
-                
-                return new FormResult
-                {
-                    Succeeded = false,
-                };
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<FormResult> LoginAsync(string email, string password)
-        {
-            try
-            {
-                var result = await _userService.LoginAsync(email, password, false);
-
-                if (result != null)
-                {
-                    NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-                    return new FormResult { Succeeded = true };
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-            return new FormResult { Succeeded = false, ErrorList = ["Invalid login attempt."] };
-        }
-
-        public async Task LogoutAsync()
-        {
-            await _userService.LogoutAsync();
-
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-        }
-
         public async Task<bool> CheckAuthenticatedAsync()
         {
             await GetAuthenticationStateAsync();
@@ -164,7 +115,7 @@ namespace BlazorAppAuth.Services
             try
             {
                 var result = await _roleService.AddRolesAsync(roles);
-                if (result.Count == 0)
+                if (result.Count != 0)
                 {
                     return new FormResult { Succeeded = true };
                 }

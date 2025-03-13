@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="9.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
