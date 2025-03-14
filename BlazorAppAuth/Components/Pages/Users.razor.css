@@ -1,0 +1,18 @@
+﻿/* Visual feedback on hover and active click */
+.sortable-column {
+    padding: 10px;
+    transition: background-color 0.3s ease, border 0.3s ease;
+    cursor: pointer;
+}
+
+    /* Hover effect: Light pastel blue with a soft border */
+    .sortable-column:hover {
+        background-color: lightblue;
+        color: black; /* Keeps text black on hover */
+    }
+
+    /* Active (clicked) effect: Slightly darker blue with a bolder border */
+    .sortable-column.active {
+        background-color: lightskyblue;
+        color: black; /* Ensures text remains black when active */
+    }

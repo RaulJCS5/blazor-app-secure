@@ -25,9 +25,18 @@
     <table class="table table-striped table-hover">
         <thead class="table-dark">
             <tr>
-                <th>User Name</th>
-                <th>Email</th>
-                <th>Phone</th>
+                <th @onclick="() => SortUsersBy(SortColumn.UserName)"
+                    class="sortable-column @GetSortClass(SortColumn.UserName)">
+                    User Name @GetSortArrow(SortColumn.UserName)
+                </th>
+                <th @onclick="() => SortUsersBy(SortColumn.Email)"
+                    class="sortable-column @GetSortClass(SortColumn.Email)">
+                    Email @GetSortArrow(SortColumn.Email)
+                </th>
+                <th @onclick="() => SortUsersBy(SortColumn.PhoneNumber)"
+                    class="sortable-column @GetSortClass(SortColumn.PhoneNumber)">
+                    Phone @GetSortArrow(SortColumn.PhoneNumber)
+                </th>
                 <th>Roles</th>
                 <th>Actions</th>
             </tr>
@@ -106,7 +115,6 @@
                     </div>
                 </div>
 
-
                 <button type="submit" class="btn btn-success w-100">Update User</button>
             </EditForm>
         </div>
@@ -120,6 +128,8 @@
     private List<string> SelectedRoles = new();
     private string message = "";
     private string searchText = "";
+
+    private SortingInfo currentSort = new SortingInfo { Column = SortColumn.UserName, Ascending = true };
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,6 +209,7 @@
             }
         }
     }
+
     private void ToggleRoleSelection(string roleName, bool isSelected)
     {
         if (isSelected)
@@ -217,14 +228,34 @@
     // Search logic
     private IEnumerable<UserViewModel> FilteredUserList()
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            return userList;
-        }
+        var filteredUsers = string.IsNullOrWhiteSpace(searchText) ? userList : userList.Where(u => u.UserName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
 
-        return userList.Where(u => u.UserName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        return SortList(filteredUsers);
     }
 
+    private IEnumerable<UserViewModel> SortList(IEnumerable<UserViewModel> users)
+    {
+        return currentSort.Column switch
+        {
+            SortColumn.UserName => currentSort.Ascending ? users.OrderBy(u => u.UserName) : users.OrderByDescending(u => u.UserName),
+            SortColumn.Email => currentSort.Ascending ? users.OrderBy(u => u.Email) : users.OrderByDescending(u => u.Email),
+            SortColumn.PhoneNumber => currentSort.Ascending ? users.OrderBy(u => u.PhoneNumber) : users.OrderByDescending(u => u.PhoneNumber),
+            _ => users
+        };
+    }
+
+    private void SortUsersBy(SortColumn column)
+    {
+        if (currentSort.Column == column)
+        {
+            currentSort.Ascending = !currentSort.Ascending;
+        }
+        else
+        {
+            currentSort.Column = column;
+            currentSort.Ascending = true;
+        }
+    }
 
     // Called when search text changes
     private void OnSearchChanged(ChangeEventArgs e)
@@ -232,4 +263,30 @@
         searchText = e.Value.ToString();
     }
 
+    private string GetSortClass(SortColumn column)
+    {
+        return currentSort.Column == column ? "sortable-column active" : "sortable-column";
+    }
+
+    private string GetSortArrow(SortColumn column)
+    {
+        if (currentSort.Column == column)
+        {
+            return currentSort.Ascending ? " ▲" : " ▼";
+        }
+        return string.Empty;
+    }
+
+    public enum SortColumn
+    {
+        UserName,
+        Email,
+        PhoneNumber
+    }
+
+    public class SortingInfo
+    {
+        public SortColumn Column { get; set; }
+        public bool Ascending { get; set; }
+    }
 }
