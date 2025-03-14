@@ -4,16 +4,16 @@ namespace BlazorAppAuth.Services
 {
     public interface IRoleService
     {
-        Task<List<RoleModel>> GetRolesAsync();
-        Task<List<string>> GetUserRolesAsync(string emailId);
-        Task<List<string>> AddRolesAsync(string[] roles);
-        Task<bool> AddUserRoleAsync(string emailId, string[] role);
-        Task<bool> RoleExistsAsync(string roleName); // New method
-        Task<bool> CreateRoleAsync(string roleName); // New method
-        Task<bool> AssignUserRoleAsync(string email, string roleName); // New method
-        Task<bool> UpdateRoleAsync(string roleName, string newRoleName); // New method
-        Task<bool> UpdateUserRoleAsync(string email, string currentRoleName, string newRoleName); // New method
-        Task<bool> RemoveRoleAsync(string roleName); // New method
-        Task<bool> RemoveUserRoleAsync(string email, string roleName); // New method
+        Task<List<RoleModel>> GetAllRolesAsync(); // Renamed for clarity
+        Task<List<string>> GetUserRolesAsync(string userEmail);
+        Task<List<string>> AddRolesAsync(string[] roleNames);
+        Task<bool> AssignRolesToUserAsync(string userEmail, string[] roleNames);
+        Task<bool> DoesRoleExistAsync(string roleName); // Renamed for consistency
+        Task<bool> CreateRoleAsync(string roleName);
+        Task<bool> AssignRoleToUserAsync(string userEmail, string roleName);
+        Task<bool> RenameRoleAsync(string currentRoleName, string newRoleName); // Renamed for better clarity
+        Task<bool> UpdateUserRoleAsync(string userEmail, string currentRoleName, string newRoleName);
+        Task<bool> DeleteRoleAsync(string roleName); // Renamed for clarity
+        Task<bool> RevokeUserRoleAsync(string userEmail, string roleName); // Renamed for clarity
     }
 }

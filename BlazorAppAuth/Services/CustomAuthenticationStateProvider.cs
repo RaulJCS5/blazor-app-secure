@@ -47,7 +47,7 @@ namespace BlazorAppAuth.Services
                     return new AuthenticationState(user);
                 }
 
-                var userServiceInfo = await _userService.GetUserInfoAsync(userName);
+                var userServiceInfo = await _userService.GetUserByEmailAsync(userName);
 
                 if (userServiceInfo == null)
                 {
@@ -96,7 +96,7 @@ namespace BlazorAppAuth.Services
         {
             try
             {
-                var roles = await _roleService.GetRolesAsync();
+                var roles = await _roleService.GetAllRolesAsync();
                 return roles?.Select(x => new Role { Name = x.Name }).ToList() ?? new List<Role>();
             }
             catch (Exception ex)
@@ -126,7 +126,7 @@ namespace BlazorAppAuth.Services
         {
             try
             {
-                var userList = await _userService.GetAllUsers();
+                var userList = await _userService.GetAllUsersAsync();
                 return userList?.Select(x => new UserViewModel
                 {
                     Email = x.Email,
@@ -146,7 +146,7 @@ namespace BlazorAppAuth.Services
         {
             try
             {
-                var userModel = await _userService.GetUserById(userEmailId);
+                var userModel = await _userService.GetUserByEmailAsync(userEmailId);
                 return userModel == null ? null : new UserViewModel
                 {
                     Email = userModel.Email,
@@ -166,7 +166,7 @@ namespace BlazorAppAuth.Services
         {
             try
             {
-                return await _userService.UpdateUser(userEmailId, new Model.UserModel
+                return await _userService.UpdateUserAsync(userEmailId, new Model.UserModel
                 {
                     Email = user.Email,
                     UserName = user.UserName,
@@ -185,7 +185,7 @@ namespace BlazorAppAuth.Services
         {
             try
             {
-                return await _userService.DeleteUserByEmail(userEmailId);
+                return await _userService.DeleteUserAsync(userEmailId);
             }
             catch (Exception ex)
             {

@@ -8,204 +8,263 @@ namespace BlazorAppAuth.Services
     {
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<User> _userManager;
-        public RoleService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager){
+        private readonly ILogger<RoleService> _logger;
+
+        public RoleService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager, ILogger<RoleService> logger)
+        {
             _roleManager = roleManager;
             _userManager = userManager;
+            _logger = logger;
         }
-        public async Task<List<string>> AddRolesAsync(string[] roles)
+        public async Task<List<string>> AddRolesAsync(string[] roleNames)
         {
-            List<string> result = new List<string>();
-            foreach (string role in roles)
+            var addedRoles = new List<string>();
+
+            foreach (var roleName in roleNames)
             {
-                bool roleExist = await _roleManager.RoleExistsAsync(role);
-                if (!roleExist)
+                if (!await _roleManager.RoleExistsAsync(roleName))
                 {
-                    IdentityRole newRole = new IdentityRole(role);
-                    IdentityResult roleResult = await _roleManager.CreateAsync(newRole);
-                    if (roleResult.Succeeded)
+                    var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+
+                    if (result.Succeeded)
                     {
-                        result.Add(role);
+                        addedRoles.Add(roleName);
+                    }
+                    else
+                    {
+                        _logger.LogError($"Failed to create role: {roleName}");
                     }
                 }
             }
-            return result;
+            return addedRoles;
         }
 
-        public async Task<bool> AddUserRoleAsync(string emailId, string[] roles)
+        public async Task<bool> AssignRolesToUserAsync(string userEmail, string[] roleNames)
         {
-            User? user = await _userManager.FindByEmailAsync(emailId);
-            List<string> exisitingRoles = await ExistsRolesAsync(roles);
-            if (user != null && exisitingRoles.Count == roles.Length)
+            try
             {
-                IdentityResult result = await _userManager.AddToRolesAsync(user, exisitingRoles);
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                if (user == null)
+                {
+                    _logger.LogWarning($"User not found: {userEmail}");
+                    return false;
+                }
+
+                var validRoles = await FilterExistingRolesAsync(roleNames);
+                if (!validRoles.Any())
+                {
+                    _logger.LogWarning("No valid roles found to assign.");
+                    return false;
+                }
+
+                var result = await _userManager.AddToRolesAsync(user, validRoles);
                 return result.Succeeded;
             }
-            return false;
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error assigning roles to user {userEmail}: {ex.Message}");
+                return false;
+            }
         }
 
-        public async Task<List<RoleModel>> GetRolesAsync()
+        public async Task<List<RoleModel>> GetAllRolesAsync()
         {
-            List<RoleModel> roles = _roleManager.Roles.Select(x => new RoleModel
+            try
             {
-                Id = Guid.Parse(x.Id),
-                Name = x.Name
-            }).ToList();
-            return roles;
+                return _roleManager.Roles
+                    .Select(r => new RoleModel { Id = Guid.Parse(r.Id), Name = r.Name })
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving roles: {ex.Message}");
+                return new List<RoleModel>();
+            }
         }
 
-        private async Task<List<string>> ExistsRolesAsync(string[] roles)
+        private async Task<List<string>> FilterExistingRolesAsync(string[] roleNames)
         {
-            List<string> result = new List<string>();
-            foreach (string role in roles)
+            var validRoles = new List<string>();
+
+            foreach (var roleName in roleNames)
             {
-                bool roleExist = await _roleManager.RoleExistsAsync(role);
-                if (roleExist)
+                if (await _roleManager.RoleExistsAsync(roleName))
                 {
-                    result.Add(role);
+                    validRoles.Add(roleName);
                 }
             }
-            return result;
+            return validRoles;
         }
 
-        public async Task<List<string>> GetUserRolesAsync(string emailId)
+        public async Task<List<string>> GetUserRolesAsync(string userEmail)
         {
-            User? user = await _userManager.FindByEmailAsync(emailId);
-            IList<string> userRoles = await _userManager.GetRolesAsync(user);
-            return userRoles.ToList();
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                return user == null ? new List<string>() : (await _userManager.GetRolesAsync(user)).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving roles for user {userEmail}: {ex.Message}");
+                return new List<string>();
+            }
         }
 
-        public async Task<bool> RoleExistsAsync(string roleName)
+        public async Task<bool> DoesRoleExistAsync(string roleName)
         {
-            var role = await _roleManager.FindByNameAsync(roleName);
-            return role != null;
+            try
+            {
+                return await _roleManager.RoleExistsAsync(roleName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error checking if role exists: {roleName}, {ex.Message}");
+                return false;
+            }
         }
 
-        public Task<bool> CreateRoleAsync(string roleName)
+        public async Task<bool> CreateRoleAsync(string roleName)
         {
-            var role = new IdentityRole(roleName);
-            return _roleManager.CreateAsync(role).ContinueWith(t => t.Result.Succeeded);
+            try
+            {
+                if (await _roleManager.RoleExistsAsync(roleName))
+                {
+                    _logger.LogWarning($"Role already exists: {roleName}");
+                    return false;
+                }
+
+                var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error creating role {roleName}: {ex.Message}");
+                return false;
+            }
         }
 
-        public async Task<bool> AssignUserRoleAsync(string email, string roleName)
+        public async Task<bool> AssignRoleToUserAsync(string userEmail, string roleName)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            try
             {
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                if (user == null || !await _roleManager.RoleExistsAsync(roleName))
+                {
+                    _logger.LogWarning($"User or role not found: {userEmail}, {roleName}");
+                    return false;
+                }
+
+                var result = await _userManager.AddToRoleAsync(user, roleName);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error assigning role {roleName} to user {userEmail}: {ex.Message}");
                 return false;
             }
-
-            var roleExists = await _roleManager.RoleExistsAsync(roleName);
-            if (!roleExists)
-            {
-                return false;
-            }
-
-            var result = await _userManager.AddToRoleAsync(user, roleName);
-            return result.Succeeded;
         }
 
-        public async Task<bool> UpdateRoleAsync(string roleName, string newRoleName)
+        public async Task<bool> RenameRoleAsync(string currentRoleName, string newRoleName)
         {
-            var role = await _roleManager.FindByNameAsync(roleName);
-            if (role == null)
+            try
             {
+                var role = await _roleManager.FindByNameAsync(currentRoleName);
+                if (role == null || await _roleManager.RoleExistsAsync(newRoleName))
+                {
+                    _logger.LogWarning($"Role rename failed: {currentRoleName} to {newRoleName}");
+                    return false;
+                }
+
+                role.Name = newRoleName;
+                var result = await _roleManager.UpdateAsync(role);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error renaming role {currentRoleName} to {newRoleName}: {ex.Message}");
                 return false;
             }
-
-            var newRoleExists = await _roleManager.RoleExistsAsync(newRoleName);
-            if (newRoleExists)
-            {
-                return false;
-            }
-
-            role.Name = newRoleName;
-            var result = await _roleManager.UpdateAsync(role);
-            return result.Succeeded;
         }
 
-        public async Task<bool> UpdateUserRoleAsync(string email, string currentRoleName, string newRoleName)
+        public async Task<bool> UpdateUserRoleAsync(string userEmail, string currentRoleName, string newRoleName)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            try
             {
-                return false;
-            }
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                if (user == null || !await _roleManager.RoleExistsAsync(currentRoleName) || !await _roleManager.RoleExistsAsync(newRoleName))
+                {
+                    _logger.LogWarning($"User or role not found: {userEmail}, {currentRoleName}, {newRoleName}");
+                    return false;
+                }
 
-            var currentRoleExists = await _roleManager.RoleExistsAsync(currentRoleName);
-            if (!currentRoleExists)
-            {
-                return false;
-            }
+                if (!await _userManager.IsInRoleAsync(user, currentRoleName))
+                {
+                    _logger.LogWarning($"User {userEmail} is not in role {currentRoleName}");
+                    return false;
+                }
 
-            var roleExists = await _roleManager.RoleExistsAsync(newRoleName);
-            if (!roleExists)
-            {
-                return false;
-            }
-
-            var isInRole = await _userManager.IsInRoleAsync(user, currentRoleName);
-            if (!isInRole)
-            {
-                return false;
-            }
-
-            var removeResult = await _userManager.RemoveFromRoleAsync(user, currentRoleName);
-            if (!removeResult.Succeeded)
-            {
-                return false;
-            }
-
-            var addResult = await _userManager.AddToRoleAsync(user, newRoleName);
-            return addResult.Succeeded;
-        }
-
-        public async Task<bool> RemoveRoleAsync(string roleName)
-        {
-            var role = await _roleManager.FindByNameAsync(roleName);
-            if (role == null)
-            {
-                return false;
-            }
-
-            // Get all users in the role
-            var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
-            foreach (var user in usersInRole)
-            {
-                // Remove the role from the user
-                var result = await _userManager.RemoveFromRoleAsync(user, roleName);
-                if (!result.Succeeded)
+                var removeResult = await _userManager.RemoveFromRoleAsync(user, currentRoleName);
+                if (!removeResult.Succeeded)
                 {
                     return false;
                 }
-            }
 
-            // Delete the role
-            var deleteResult = await _roleManager.DeleteAsync(role);
-            return deleteResult.Succeeded;
+                var addResult = await _userManager.AddToRoleAsync(user, newRoleName);
+                return addResult.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating user role {userEmail}: {ex.Message}");
+                return false;
+            }
         }
 
-        public async Task<bool> RemoveUserRoleAsync(string email, string roleName)
+        public async Task<bool> DeleteRoleAsync(string roleName)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            try
             {
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role == null)
+                {
+                    _logger.LogWarning($"Role not found: {roleName}");
+                    return false;
+                }
+
+                var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+                foreach (var user in usersInRole)
+                {
+                    await _userManager.RemoveFromRoleAsync(user, roleName);
+                }
+
+                var result = await _roleManager.DeleteAsync(role);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deleting role {roleName}: {ex.Message}");
                 return false;
             }
+        }
 
-            var roleExists = await _roleManager.RoleExistsAsync(roleName);
-            if (!roleExists)
+        public async Task<bool> RevokeUserRoleAsync(string userEmail, string roleName)
+        {
+            try
             {
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                if (user == null || !await _roleManager.RoleExistsAsync(roleName) || !await _userManager.IsInRoleAsync(user, roleName))
+                {
+                    _logger.LogWarning($"User-role mismatch: {userEmail}, {roleName}");
+                    return false;
+                }
+
+                var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error revoking role {roleName} from user {userEmail}: {ex.Message}");
                 return false;
             }
-
-            var isInRole = await _userManager.IsInRoleAsync(user, roleName);
-            if (!isInRole)
-            {
-                return false;
-            }
-
-            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
-            return result.Succeeded;
         }
     }
 }
