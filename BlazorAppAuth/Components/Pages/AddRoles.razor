@@ -5,66 +5,83 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "admin")]
 @inject IAccountManagement Acct
-<h3>AddRoles</h3>
+
+<h3 class="mb-4 text-primary">Manage Roles</h3>
 
 @if (roleList?.Count > 0)
 {
-    <ul>
-        @foreach (var role in roleList)
-        {
-            <li>@role.Name</li>
-        }
-    </ul>
+    <div class="mb-3">
+        <h5>Existing Roles:</h5>
+        <ul class="list-group">
+            @foreach (var role in roleList)
+            {
+                <li class="list-group-item">@role.Name</li>
+            }
+        </ul>
+    </div>
 }
 
-<h1>@message</h1>
-
-@if (Roles?.Count == 0)
+@if (!string.IsNullOrEmpty(message))
 {
-    <div>
-        <input type="text" @bind="NewRole" />
-        <button @onclick="AddRole">Add Role</button>
+    <div class="alert alert-info">@message</div>
+}
+
+@if (Roles.Count == 0)
+{
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Enter new role" @bind="NewRole" />
+        <button class="btn btn-primary" @onclick="AddRole">Add Role</button>
     </div>
 }
 else
 {
-    @foreach (var role in Roles)
-    {
-        var role1 = role;
-        <div>
-            <input disabled type="text" @bind="role1" />
-            <button @onclick="() => RemoveRole(role)">Remove Role</button>
-        </div>
-    }
-    <div>
-        <input type="text" @bind="NewRole" />
-        <button @onclick="AddRole">Add Role</button>
+    <h5>New Roles:</h5>
+    <ul class="list-group mb-3">
+        @foreach (var role in Roles)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@role</span>
+                <button class="btn btn-danger btn-sm" @onclick="() => RemoveRole(role)">Remove</button>
+            </li>
+        }
+    </ul>
+
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Enter new role" @bind="NewRole" />
+        <button class="btn btn-primary" @onclick="AddRole">Add Role</button>
     </div>
 
-    <div>
-        <button @onclick="SubmitRole">Submit</button>
-    </div>
-
+    <button class="btn btn-success w-100" @onclick="SubmitRole">Submit Roles</button>
 }
-<h1>@submitMessage</h1>
+
+@if (!string.IsNullOrEmpty(submitMessage))
+{
+    <div class="alert alert-success mt-3">@submitMessage</div>
+}
 
 @code {
     string submitMessage = string.Empty;
     string message = string.Empty;
     List<string> Roles = new List<string>();
     List<Role> roleList = new List<Role>();
-    string NewRole { get; set; }
+    string NewRole { get; set; } = string.Empty;
 
-    override protected async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        GetRoles();
-        base.OnInitialized();
+        await GetRoles();
     }
 
-    private async void GetRoles()
+    private async Task GetRoles()
     {
-        var list = await Acct.GetRolesAsync();
-        roleList = list.ToList();
+        try
+        {
+            var list = await Acct.GetRolesAsync();
+            roleList = list.ToList();
+        }
+        catch (Exception ex)
+        {
+            message = "Failed to load roles. Please try again.";
+        }
         StateHasChanged();
     }
 
@@ -72,43 +89,49 @@ else
     {
         if (!string.IsNullOrWhiteSpace(NewRole))
         {
-            var isExistRole = Roles.Exists(x => x.Contains(NewRole));
-            if (!isExistRole)
+            if (!Roles.Contains(NewRole, StringComparer.OrdinalIgnoreCase))
             {
                 Roles.Add(NewRole);
-                message = "Role added";
+                message = "Role added successfully.";
             }
             else
             {
-                message = "Already exists";
-                return;
+                message = "This role already exists.";
             }
             NewRole = string.Empty;
+        }
+        else
+        {
+            message = "Role name cannot be empty.";
         }
     }
 
     private void RemoveRole(string role)
     {
         Roles.Remove(role);
-        message = "Role removed";
+        message = "Role removed.";
     }
 
-    private async void SubmitRole()
+    private async Task SubmitRole()
     {
         submitMessage = string.Empty;
-        var response = await Acct.AddRoleAsync(Roles.ToArray());
-        if (response.Succeeded)
+        try
         {
-            submitMessage = "Role added successfully";
-            // Roles.Clear();
-            Roles = new List<string>();
-            GetRoles();
+            var response = await Acct.AddRoleAsync(Roles.ToArray());
+            if (response.Succeeded)
+            {
+                submitMessage = "Roles added successfully!";
+                Roles.Clear();
+                await GetRoles();
+            }
+            else
+            {
+                submitMessage = "Failed to add roles.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            submitMessage = "Role not added";
+            submitMessage = "An error occurred while submitting roles.";
         }
-        GetRoles();
     }
-
 }

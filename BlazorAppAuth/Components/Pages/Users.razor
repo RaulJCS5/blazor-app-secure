@@ -10,96 +10,141 @@
 
 @attribute [Authorize(Roles = "admin")]
 
-<h3>Users</h3>
+<h3 class="mb-4 text-primary">User Management</h3>
 
-<div class="grid" tabindex="-1">
-    <QuickGrid Items="@userList">
-        <PropertyColumn Property="@(p=>p.UserName)" Sortable="true">
-        </PropertyColumn>
-        <PropertyColumn Property="@(p=>p.Email)" Sortable="true">
-        </PropertyColumn>
-        <TemplateColumn Title="Roles" Sortable="false">
-            <div class="flex items-center">
-                <nobr>
-                    @if(context.Roles != null && context.Roles?.Count > 0)
-                    {
-                        <ul>
-                            @foreach (var role in context.Roles)
-                            {
-                                <li>
-                                    <strong>@role</strong>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <strong>------</strong>
-                    }
-                </nobr>
-            </div>
-        </TemplateColumn>
-        <PropertyColumn Property="@(p=>p.PhoneNumber)" Sortable="true">
-        </PropertyColumn>
-        <TemplateColumn Title="Actions">
-            <button class="btn btn-primary" @onclick="@(()=>Edit(context.Email))">Edit</button>
-            <button class="btn btn-danger" @onclick="@(()=>Delete(context))">Delete</button>
-        </TemplateColumn>
-    </QuickGrid>
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info">@message</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>User Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Roles</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in userList)
+            {
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.Email</td>
+                    <td>@user.PhoneNumber</td>
+                    <td>
+                        @if (user.Roles != null && user.Roles.Count > 0)
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var role in user.Roles)
+                                {
+                                    <li><span class="badge bg-secondary">@role</span></li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No roles assigned</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(user.Email)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(user.Email)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @if (userModel != null)
 {
-    <EditForm Model="@userModel" OnValidSubmit="@UpdateUser">
-        <DataAnnotationsValidator></DataAnnotationsValidator>
-        <ValidationSummary></ValidationSummary>
-        <div class="form-group">
-            <label for="name">Name:</label>
-            <InputText id="name" class="form-control disabled" @bind-Value="userModel.UserName"></InputText>
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <strong>Edit User</strong>
         </div>
-        <div class="form-group">
-            <label for="description">Email:</label>
-            <InputText id="description" class="form-control" @bind-Value="userModel.Email"></InputText>
-        </div>
-        <div class="form-group">
-            <label for="description">Phone Number:</label>
-            <InputText id="description" class="form-control" @bind-Value="userModel.PhoneNumber"></InputText>
-        </div>
-        <div class="form-group">
-            <label for="userRole">Roles:</label>
-            <InputSelect id="userrole" class="form-control" @bind-Value="SelectedRoles" multiple>
-                @if (userModel.Roles != null)
-                {
-                    @foreach (var role in userModel.Roles)
-                    {
-                        <option value="@role">@role</option>
-                    }
-                }
-                else
-                {
-                    <option value="">No roles available</option>
-                }
-            </InputSelect>
-        </div>
-        <button type="submit" class="btn btn-primary">Update</button>
-    </EditForm>
-}
-else
-{
+        <div class="card-body">
+            <EditForm Model="@userModel" OnValidSubmit="@UpdateUser">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <ValidationSummary></ValidationSummary>
 
+                <div class="mb-3">
+                    <label class="form-label">Name:</label>
+                    <InputText class="form-control" @bind-Value="userModel.UserName" disabled></InputText>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email:</label>
+                    <InputText class="form-control" @bind-Value="userModel.Email"></InputText>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phone Number:</label>
+                    <InputText class="form-control" @bind-Value="userModel.PhoneNumber"></InputText>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Assign Roles:</label>
+                    <div class="form-check">
+                        @foreach (var role in availableRoles)
+                        {
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="@role.Name"
+                                       value="@role.Name"
+                                       checked="@SelectedRoles.Contains(role.Name)"
+                                       @onchange="(e) => ToggleRoleSelection(role.Name, (bool)e.Value)" />
+                                <label class="form-check-label" for="@role.Name">@role.Name</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+
+                <button type="submit" class="btn btn-success w-100">Update User</button>
+            </EditForm>
+        </div>
+    </div>
 }
 
 @code {
-    private IQueryable<UserViewModel> userList;
+    private List<UserViewModel> userList = new();
     private UserViewModel userModel = null;
-    private string[] SelectedRoles = new string[] { };
+    private List<Role> availableRoles = new();
+    private List<string> SelectedRoles = new();
+    private string message = "";
 
     protected override async Task OnInitializedAsync()
     {
-        var users = await Acct.GetUsers();
-        userList = users.ToList().AsQueryable();
-        userModel = null; // Clear the form
-        await base.OnInitializedAsync();
+        await LoadUsers();
+        await LoadRoles();
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            var users = await Acct.GetUsers();
+            userList = users?.ToList() ?? new List<UserViewModel>();
+        }
+        catch
+        {
+            message = "Failed to load users. Please try again.";
+        }
+    }
+
+    private async Task LoadRoles()
+    {
+        try
+        {
+            availableRoles = await Acct.GetRolesAsync();
+        }
+        catch
+        {
+            message = "Failed to load roles.";
+        }
     }
 
     async Task Edit(string email)
@@ -109,74 +154,58 @@ else
             userModel = await Acct.GetUserByEmail(email);
             if (userModel != null)
             {
-                SelectedRoles = userModel.Roles?.ToArray() ?? Array.Empty<string>();
-            }
-            else
-            {
-                SelectedRoles = Array.Empty<string>();
-            }
-
-            var roles = await Acct.GetRolesAsync();
-            if (roles != null)
-            {
-                userModel.Roles = roles.Select(x => x.Name).ToList();
-            }
-            else
-            {
-                userModel.Roles = new List<string>();
+                SelectedRoles = userModel.Roles?.ToList() ?? new List<string>();
             }
         }
-        catch (Exception ex)
+        catch
         {
-            // Log the exception or handle it as needed
-            Console.WriteLine(ex.Message);
+            message = "Error retrieving user details.";
         }
     }
 
-    async void Delete(UserViewModel user)
+    async Task Delete(string email)
     {
-        var result = await Acct.UserDelete(user.Email);
-        if (result)
+        if (await Acct.UserDelete(email))
         {
-            var users = await Acct.GetUsers();
-            userList = users.ToList().AsQueryable();
-            StateHasChanged();
+            message = "User deleted successfully!";
+            await LoadUsers();
+        }
+        else
+        {
+            message = "Failed to delete user.";
         }
     }
 
     private async Task UpdateUser()
     {
-        try
+        if (userModel != null)
         {
-            // Ensure SelectedRoles is not null
-            userModel.Roles = SelectedRoles?.ToList() ?? new List<string>();
-
-            // Attempt to update the user
-            var updateResult = await Acct.UserUpdate(userModel.Email, userModel);
-            if (updateResult)
+            userModel.Roles = SelectedRoles;
+            var success = await Acct.UserUpdate(userModel.Email, userModel);
+            if (success)
             {
-                // Refresh the user list
-                var users = await Acct.GetUsers();
-                userList = users.ToList().AsQueryable();
-                userModel = null; // Clear the form
-                return;
-            }
-
-            // Fetch roles again if update fails
-            var roles = await Acct.GetRolesAsync();
-            if (roles != null)
-            {
-                userModel.Roles = roles.Select(x => x.Name).ToList();
+                message = "User updated successfully!";
+                userModel = null;
+                await LoadUsers();
             }
             else
             {
-                userModel.Roles = new List<string>();
+                message = "Error updating user.";
             }
         }
-        catch (Exception ex)
+    }
+    private void ToggleRoleSelection(string roleName, bool isSelected)
+    {
+        if (isSelected)
         {
-            // Log the exception or handle it as needed
-            Console.WriteLine(ex.Message);
+            if (!SelectedRoles.Contains(roleName))
+            {
+                SelectedRoles.Add(roleName);
+            }
+        }
+        else
+        {
+            SelectedRoles.Remove(roleName);
         }
     }
 
