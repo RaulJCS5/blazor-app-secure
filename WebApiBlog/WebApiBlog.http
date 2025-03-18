@@ -1,0 +1,23 @@
+@WebApiBlog_HostAddress = https://localhost:7290
+
+GET {{WebApiBlog_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{WebApiBlog_HostAddress}}/api/product
+
+###
+
+POST {{WebApiBlog_HostAddress}}/api/product
+Content-Type: application/json
+
+{
+  "ID": 3,
+        "ProductName": "okay",
+        "Quantity": 12,
+        "Price": 11,
+        "Description": "okay123"
+}
+
+###
