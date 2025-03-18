@@ -21,3 +21,7 @@ Content-Type: application/json
 }
 
 ###
+
+GET {{WebApiBlog_HostAddress}}/api/product
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidXNlcjEyMyIsImV4cCI6MTc0MjMxNzYwNCwiaXNzIjoiam9uY2VuYSIsImF1ZCI6ImpvbmNlbmEifQ.fhiMRLB54kMnv1AQiGa7hMgakLcM4R7srpGfw2ztHoE
+###
