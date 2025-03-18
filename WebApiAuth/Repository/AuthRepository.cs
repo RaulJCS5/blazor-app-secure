@@ -6,93 +6,92 @@ namespace WebApiAuth.Repository
 {
     public class AuthRepository(AppDbContext dbContext) : IAuthRepository
     {
-        public Task<UserModel> GetUserByLogin(string username, string password)
+        //  Generic method to check existence of an entity in the database
+        private async Task<bool> ExistsAsync<T>(DbSet<T> dbSet, Func<T, bool> predicate) where T : class
         {
-            return dbContext.Users.Include(n => n.UserRoles).ThenInclude(n => n.Role).FirstOrDefaultAsync(n => n.Username == username && n.Password == password);
+            return await Task.Run(() => dbSet.Any(predicate));
         }
+
+        //  Get user with roles by login
+        public Task<UserModel?> GetUserByLogin(string username, string password) =>
+            dbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+
+        //  Remove refresh token by user ID
         public async Task RemoveRefreshTokenByUserID(int userID)
         {
-            var refreshToken = dbContext.RefreshTokens.FirstOrDefault(n => n.UserID == userID);
-            if (refreshToken != null)
+            var refreshTokens = dbContext.RefreshTokens.Where(rt => rt.UserID == userID);
+            if (await refreshTokens.AnyAsync())
             {
-                dbContext.RemoveRange(refreshToken);
+                dbContext.RefreshTokens.RemoveRange(refreshTokens);
                 await dbContext.SaveChangesAsync();
             }
         }
+
+        //  Add refresh token
         public async Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel)
         {
             await dbContext.RefreshTokens.AddAsync(refreshTokenModel);
             await dbContext.SaveChangesAsync();
         }
 
-        public Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken)
-        {
-            return dbContext.RefreshTokens.Include(n => n.User).ThenInclude(n => n.UserRoles).ThenInclude(n => n.Role).FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
-        }
+        //  Get refresh token with user and roles
+        public Task<RefreshTokenModel?> GetRefreshTokenModel(string refreshToken) =>
+            dbContext.RefreshTokens
+                .Include(rt => rt.User)
+                .ThenInclude(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(rt => rt.RefreshToken == refreshToken);
 
-        public async Task<UserModel?> GetUser(string username)
-        {
-            var user = await dbContext.Users.FirstOrDefaultAsync(n => n.Username == username);
-            return user;
-        }
+        //  Get user by username
+        public Task<UserModel?> GetUser(string username) =>
+            dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
 
+        //  Add user with duplicate check
         public async Task<bool> AddUser(UserModel user)
         {
-            // Check if user already exists
-            var existingUser = await dbContext.Users.AnyAsync(u => u.Username == user.Username);
-            if (existingUser)
-            {
-                return false; // User already exists
-            }
+            if (await ExistsAsync(dbContext.Users, u => u.Username == user.Username))
+                return false;
 
-            // Add user
             await dbContext.Users.AddAsync(user);
-            var result = await dbContext.SaveChangesAsync();
-
-            // Return true if at least one record was added
-            return result > 0;
+            return await dbContext.SaveChangesAsync() > 0;
         }
 
+        //  Get role by role name
+        public Task<RoleModel?> GetRole(string roleName) =>
+            dbContext.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
 
-        public async Task<RoleModel?> GetRole(string roleName)
-        {
-            var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
-            return role;
-        }
-
+        //  Add user role with duplicate check
         public async Task<bool> AddUserRole(UserRoleModel userRole)
         {
-            // Check if the user already has this role
-            bool roleExists = await dbContext.UserRoles.AnyAsync(ur => ur.UserID == userRole.UserID && ur.RoleID == userRole.RoleID);
+            if (await ExistsAsync(dbContext.UserRoles, ur => ur.UserID == userRole.UserID && ur.RoleID == userRole.RoleID))
+                return false;
 
-            if (roleExists)
-            {
-                return false; // Role already assigned to the user
-            }
-
-            // Add the role
             await dbContext.UserRoles.AddAsync(userRole);
-            int result = await dbContext.SaveChangesAsync();
-
-            // Return true if role was added, null if failed
-            return result > 0 ? true : false;
+            return await dbContext.SaveChangesAsync() > 0;
         }
 
+        //  Add a new role with duplicate check
         public async Task<bool> AddRole(RoleModel role)
         {
-            // Check if the role already exists
-            bool roleExists = await dbContext.Roles.AnyAsync(r => r.RoleName == role.RoleName);
+            if (await ExistsAsync(dbContext.Roles, r => r.RoleName == role.RoleName))
+                return false;
 
-            if (roleExists)
-            {
-                return false; // Role already exists
-            }
-
-            // Add the role
             await dbContext.Roles.AddAsync(role);
-            int result = await dbContext.SaveChangesAsync();
+            return await dbContext.SaveChangesAsync() > 0;
+        }
 
-            return result > 0;
+        //  Check if a user has a specific role
+        public async Task<bool> UserRoleExists(string username, string roleName)
+        {
+            var user = await GetUser(username);
+            var role = await GetRole(roleName);
+            if (user == null || role == null)
+                return false;
+
+            return await dbContext.UserRoles.AnyAsync(ur => ur.UserID == user.ID && ur.RoleID == role.ID);
         }
     }
 }

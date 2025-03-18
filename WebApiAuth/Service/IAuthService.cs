@@ -9,5 +9,6 @@ namespace WebApiAuth.Service
         Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken);
         Task<UserModel?> RegisterUser(RegisterModel registerModel);
         Task<bool> AddRole(RoleModel role);
+        Task<bool> AssignRoleToUser(string username, string rolename);
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using WebApiAuth.Dto;
 using WebApiAuth.Model;
 using WebApiAuth.Service;
 
@@ -107,5 +108,60 @@ namespace WebApiAuth.Controllers
 
             return Ok(new { message = "Role created successfully" });
         }
+        [HttpPost("assignrole")]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto assignRoleDto)
+        {
+            if (string.IsNullOrWhiteSpace(assignRoleDto.Username) || string.IsNullOrWhiteSpace(assignRoleDto.RoleName))
+            {
+                return BadRequest(new { message = "Username and RoleName are required." });
+            }
+
+            var result = await authService.AssignRoleToUser(assignRoleDto.Username, assignRoleDto.RoleName);
+
+            if (!result)
+            {
+                return BadRequest(new { message = "Failed to assign role. User or role may not exist, or role is already assigned." });
+            }
+
+            return Ok(new { message = "Role assigned successfully" });
+        }
+        [HttpPost("assignroles")]
+        public async Task<IActionResult> AssignRoles([FromBody] AssignRolesDto assignRolesDto)
+        {
+            if (string.IsNullOrWhiteSpace(assignRolesDto.Username) || assignRolesDto.RoleNames == null || !assignRolesDto.RoleNames.Any())
+            {
+                return BadRequest(new { message = "Username and at least one RoleName are required." });
+            }
+
+            List<string> assignedRoles = new();
+            List<string> failedRoles = new();
+
+            foreach (var roleName in assignRolesDto.RoleNames)
+            {
+                bool result = await authService.AssignRoleToUser(assignRolesDto.Username, roleName);
+
+                if (result)
+                {
+                    assignedRoles.Add(roleName);
+                }
+                else
+                {
+                    failedRoles.Add(roleName);
+                }
+            }
+
+            if (!assignedRoles.Any())
+            {
+                return BadRequest(new { message = "No roles were assigned. User may not exist, roles may not exist, or roles are already assigned." });
+            }
+
+            return Ok(new
+            {
+                message = "Role assignment completed.",
+                assignedRoles,
+                failedRoles = failedRoles.Any() ? failedRoles : null
+            });
+        }
+
     }
 }

@@ -13,5 +13,6 @@ namespace WebApiAuth.Repository
         Task<RoleModel?> GetRole(string roleName);
         Task<bool> AddUserRole(UserRoleModel userRole);
         Task<bool> AddRole(RoleModel role);
+        Task<bool> UserRoleExists(string username, string rolename);
     }
 }

@@ -8,20 +8,15 @@ namespace WebApiAuth.Service
 {
     public class AuthService(IAuthRepository authRepository) : IAuthService
     {
-        public Task<UserModel> GetUserByLogin(string username, string password)
-        {
-            var passwordHash = HashPassword(password);
-            return authRepository.GetUserByLogin(username, passwordHash);
-        }
+        public Task<UserModel?> GetUserByLogin(string username, string password) =>
+            authRepository.GetUserByLogin(username, HashPassword(password));
         public async Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel)
         {
             await authRepository.RemoveRefreshTokenByUserID(refreshTokenModel.UserID);
             await authRepository.AddRefreshTokenModel(refreshTokenModel);
         }
-        public Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken)
-        {
-            return authRepository.GetRefreshTokenModel(refreshToken);
-        }
+        public Task<RefreshTokenModel?> GetRefreshTokenModel(string refreshToken) =>
+            authRepository.GetRefreshTokenModel(refreshToken);
 
         public async Task<UserModel?> RegisterUser(RegisterModel registerModel)
         {
@@ -38,7 +33,8 @@ namespace WebApiAuth.Service
                 Password = passwordHash
             };
 
-            await authRepository.AddUser(newUser);
+            bool userAdded = await authRepository.AddUser(newUser);
+            if (!userAdded) return null; // Failed to add user
 
             // Assign roles
             foreach (var roleName in registerModel.Roles)
@@ -71,9 +67,17 @@ namespace WebApiAuth.Service
             return inputHash == storedHash;
         }
 
-        public async Task<bool> AddRole(RoleModel role)
+        public Task<bool> AddRole(RoleModel role) => authRepository.AddRole(role);
+
+        public async Task<bool> AssignRoleToUser(string username, string roleName)
         {
-            return await authRepository.AddRole(role);
+            var user = await authRepository.GetUser(username);
+            var role = await authRepository.GetRole(roleName);
+
+            if (user == null || role == null || await authRepository.UserRoleExists(username, roleName))
+                return false; // User or Role does not exist, or Role already assigned
+
+            return await authRepository.AddUserRole(new UserRoleModel { UserID = user.ID, RoleID = role.ID });
         }
     }
 }

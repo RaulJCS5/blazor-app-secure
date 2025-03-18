@@ -34,3 +34,25 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{WebApiAuth_HostAddress}}/api/auth/assignrole
+Content-Type: application/json
+
+{
+  "username": "rs98",
+  "rolename": "benef"
+}
+
+###
+
+POST {{WebApiAuth_HostAddress}}/api/auth/assignroles
+Content-Type: application/json
+
+{
+  "username":"raul",
+  "rolenames":[
+    "admin","benef","tecnico"
+  ]
+}
+
+###
