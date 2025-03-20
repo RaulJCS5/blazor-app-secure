@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiBlog", "WebApiBlog\We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiAuth", "WebApiAuth\WebApiAuth.csproj", "{79735520-4F99-4ADC-A2BA-7A6841F3F4AF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp", "WebApp\WebApp.csproj", "{844D3D7F-4107-4123-A2F0-DA9B24A142EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{79735520-4F99-4ADC-A2BA-7A6841F3F4AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79735520-4F99-4ADC-A2BA-7A6841F3F4AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79735520-4F99-4ADC-A2BA-7A6841F3F4AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{844D3D7F-4107-4123-A2F0-DA9B24A142EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{844D3D7F-4107-4123-A2F0-DA9B24A142EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{844D3D7F-4107-4123-A2F0-DA9B24A142EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{844D3D7F-4107-4123-A2F0-DA9B24A142EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

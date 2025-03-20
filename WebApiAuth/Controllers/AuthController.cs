@@ -36,7 +36,7 @@ namespace WebApiAuth.Controllers
                     TokenExpired = DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeSeconds(),
                 });
             }
-            return null;
+            return BadRequest(new { message = "Invalid login attempt" });
         }
         [HttpGet("loginByRefeshToken")]
         public async Task<ActionResult<LoginResponseModel>> LoginByRefeshToken(string refreshToken)
