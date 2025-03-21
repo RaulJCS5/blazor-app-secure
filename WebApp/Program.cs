@@ -19,13 +19,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
     // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
     // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-    client.BaseAddress = new("https+http://localhost:7178");
+    client.BaseAddress = new("https://localhost:7178");
 });
 
 // Add localization services

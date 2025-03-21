@@ -4,8 +4,9 @@
 @using Microsoft.AspNetCore.Identity
 
 @inject NavigationManager Navigation
-
+@inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h3>Login</h3>
 
@@ -51,6 +52,11 @@
 
     async Task HandleLogin()
     {
-        Navigation.NavigateTo("/");
+        var res = await ApiClient.PostAsync<LoginResponseModel, LoginViewModel>("/api/auth/login", Input);
+        if (res != null && res.Token != null)
+        {
+            await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(res);
+            Navigation.NavigateTo("/");
+        }
     }
 }

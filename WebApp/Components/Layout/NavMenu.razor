@@ -31,7 +31,11 @@
 
         <AuthorizeView>
             <Authorized>
-                <button class="btn btn-danger" @onclick="Logout">Logout</button>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="logout">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Logout
+                    </NavLink>
+                </div>
             </Authorized>
             <NotAuthorized>
                 <div class="nav-item px-3">
@@ -46,7 +50,5 @@
 </div>
 
 @code {
-    async Task Logout() {
-        // await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
-    }
+
 }
