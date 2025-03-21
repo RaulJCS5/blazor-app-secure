@@ -1,5 +1,4 @@
-﻿﻿
-@page "/logout"
+﻿@page "/logout"
 
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
@@ -9,5 +8,7 @@
     protected override async Task OnInitializedAsync()
     {
         await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+        await Task.Delay(100); // Prevent potential race condition
+        InvokeAsync(() => Navigation.NavigateTo("/"));
     }
 }
