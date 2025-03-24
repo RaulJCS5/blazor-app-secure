@@ -16,45 +16,82 @@ namespace WebApp
             _customAuthStateProvider = customAuthStateProvider;
         }
         // Dynamically set the Authorization header using token from the cookie
-        private async Task setAuthorizedHeader()
+        private async Task<bool> setAuthorizedHeader()
         {
-            var token = _customAuthStateProvider.GetTokenFromCookie(); // Get token from AuthenticationStateProvider
-            if (!string.IsNullOrEmpty(token))
+            try
             {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var token = _customAuthStateProvider.GetTokenFromCookie(); // Get token from AuthenticationStateProvider
+                if (!string.IsNullOrEmpty(token))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
         public async Task<T1> PostAsync<T1, T2>(string url, T2 data)
         {
-            await setAuthorizedHeader();
-            var response = await _httpClient.PostAsJsonAsync(url, data);
-            if(response!=null && response.IsSuccessStatusCode)
+            try
             {
-                var result = JsonConvert.DeserializeObject<T1>(await response.Content.ReadAsStringAsync());
-                return result;
+                await setAuthorizedHeader();
+                var response = await _httpClient.PostAsJsonAsync(url, data);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<T1>(await response.Content.ReadAsStringAsync());
+                    return result;
+                }
+                return default;
             }
-            return default;
+            catch (Exception ex)
+            {
+                return default;
+            }
         }
         public async Task<T> GetFromJsonAsync<T>(string path)
         {
-            await setAuthorizedHeader();
-            return await _httpClient.GetFromJsonAsync<T>(path);
+            try
+            {
+                await setAuthorizedHeader();
+                return await _httpClient.GetFromJsonAsync<T>(path);
+            }
+            catch (Exception ex)
+            {
+                return default;
+            }
         }
         public async Task<T1> PutAsync<T1, T2>(string path, T2 postModel)
         {
-            await setAuthorizedHeader();
-            var res = await _httpClient.PutAsJsonAsync(path, postModel);
-            if (res != null && res.IsSuccessStatusCode)
+            try
             {
-                return JsonConvert.DeserializeObject<T1>(await res.Content.ReadAsStringAsync());
+                await setAuthorizedHeader();
+                var res = await _httpClient.PutAsJsonAsync(path, postModel);
+                if (res != null && res.IsSuccessStatusCode)
+                {
+                    return JsonConvert.DeserializeObject<T1>(await res.Content.ReadAsStringAsync());
+                }
+                return default;
             }
-            return default;
+            catch (Exception ex)
+            {
+                return default;
+            }
         }
         public async Task<T> DeleteAsync<T>(string path)
         {
-            await setAuthorizedHeader();
-            return await _httpClient.DeleteFromJsonAsync<T>(path);
+            try
+            {
+                await setAuthorizedHeader();
+                return await _httpClient.DeleteFromJsonAsync<T>(path);
+            }
+            catch (Exception ex)
+            {
+                return default;
+            }
         }
     }
 }
