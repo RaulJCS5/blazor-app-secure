@@ -1,0 +1,92 @@
+﻿@page "/product"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Localization
+@using Newtonsoft.Json
+@using WebApp.Model
+@inject ApiClient ApiClient
+@rendermode InteractiveServer
+
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="alert alert-warning">You are not authorized to view this page.</div>
+    </NotAuthorized>
+    <Authorized>
+        @if (ProductModels == null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            <div class="d-flex justify-content-between mb-3">
+                <h2>Product List</h2>
+                <a class="btn btn-success" href="/product/create">Create New Product</a>
+            </div>
+
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Description</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in ProductModels)
+                    {
+                        <tr>
+                            <td>@product.ProductName</td>
+                            <td>@product.Quantity</td>
+                            <td>@product.Price.ToString("C")</td>
+                            <td>@product.Description</td>
+                            <td>@product.CreateAt.ToShortDateString()</td>
+                            <td>
+                                <a class="btn btn-info btn-sm" href="/product/update/@product.ID">Edit</a>
+                                <!-- EditForm for delete with FormName to avoid ambiguity -->
+                                <button type="button" class="btn btn-danger btn-sm" @onclick="() => ConfirmDelete(product.ID)">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    public List<ProductModel> ProductModels { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProduct();
+    }
+
+    private async Task LoadProduct()
+    {
+        var res = await ApiClient.GetFromJsonAsync<BaseResponseModel>("https://localhost:7290/api/Product");
+        if (res?.Success == true)
+        {
+            ProductModels = JsonConvert.DeserializeObject<List<ProductModel>>(res.Data.ToString());
+        }
+    }
+
+    // Handle product deletion
+    private async Task ConfirmDelete(int productId)
+    {
+        // If confirmed, make the delete API call
+        var res = await ApiClient.DeleteAsync<BaseResponseModel>($"https://localhost:7290/api/Product/{productId}");
+        if (res != null && res.Success)
+        {
+            await LoadProduct();
+        }
+        else
+        {
+
+        }
+    }
+}

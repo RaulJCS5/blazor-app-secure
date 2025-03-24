@@ -2,8 +2,8 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using WebApp.Model
 
-@inject NavigationManager Navigation
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
@@ -56,7 +56,7 @@
         if (res != null && res.Token != null)
         {
             await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(res);
-            Navigation.NavigateTo("/");
+            NavigationManager.NavigateTo("/");
         }
     }
 }

@@ -1,19 +1,16 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using WebApp.Model;
 
 namespace WebApp
 {
-    public class CustomAuthStateProvider : AuthenticationStateProvider
+    public class CustomAuthStateProvider(IHttpContextAccessor httpContext) : AuthenticationStateProvider
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor = httpContext;
         private const string AuthCookieName = "AuthToken"; // Name of the cookie
-        private AuthenticationState? _anonymousUser = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Anonymous user
-        private LoginResponseModel? _sessionState; // Store in-memory session state
-        public CustomAuthStateProvider(IHttpContextAccessor httpContext)
-        {
-            _httpContextAccessor = httpContext;
-        }
+        private readonly AuthenticationState? _anonymousUser = new(new ClaimsPrincipal(new ClaimsIdentity())); // Anonymous user
+
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             try
@@ -32,6 +29,11 @@ namespace WebApp
             {
                 return _anonymousUser;
             }
+        }
+        // Method to get token from the cookie (used in ApiClient)
+        public string GetTokenFromCookie()
+        {
+            return _httpContextAccessor.HttpContext?.Request.Cookies[AuthCookieName];
         }
         public async Task MarkUserAsLoggedOut()
         {
@@ -71,7 +73,7 @@ namespace WebApp
 
             }
         }
-        private ClaimsIdentity GetClaimsIdentity(string token)
+        private static ClaimsIdentity GetClaimsIdentity(string token)
         {
             try
             {

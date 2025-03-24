@@ -1,0 +1,67 @@
+﻿@page "/product/create"
+@using WebApp.Model
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<AuthorizeView>
+    <Authorized Context="authorizedContext">
+        <h3>Create Product</h3>
+        <EditForm OnValidSubmit="Submit" Model="Model" Context="editContext">
+            <DataAnnotationsValidator />
+            <div class="container">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="productName">Product Name</label>
+                        <InputText id="productName" class="form-control" @bind-Value="Model.ProductName" />
+                        <ValidationMessage For="() => Model.ProductName" class="text-danger" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="quantity">Quantity</label>
+                        <InputNumber id="quantity" class="form-control" @bind-Value="Model.Quantity" />
+                        <ValidationMessage For="() => Model.Quantity" class="text-danger" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="price">Price</label>
+                        <InputNumber id="price" class="form-control" @bind-Value="Model.Price" />
+                        <ValidationMessage For="() => Model.Price" class="text-danger" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="description">Description</label>
+                        <InputText id="description" class="form-control" @bind-Value="Model.Description" />
+                        <ValidationMessage For="() => Model.Description" class="text-danger" />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button class="btn btn-secondary ms-2" type="button" @onclick="Cancel">Cancel</button>
+                </div>
+            </div>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">You must be logged in to access this page.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    public ProductModel Model { get; set; } = new();
+
+    private async Task Submit()
+    {
+        var res = await ApiClient.PostAsync<BaseResponseModel, ProductModel>("https://localhost:7290/api/Product", Model);
+        if (res?.Success == true)
+        {
+            NavigationManager.NavigateTo("/product");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/product");
+    }
+}

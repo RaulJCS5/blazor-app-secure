@@ -8,10 +8,10 @@ namespace BlazorApp.ApiService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ProductController(IProductService productService) : ControllerBase
     {
         [HttpGet]
-        [Authorize]
         public async Task<ActionResult<BaseResponseModel>> GetProducts()
         {
             var products = await productService.GetProducts();

@@ -19,6 +19,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddScoped<CustomAuthStateProvider>(); // Register CustomAuthStateProvider
+builder.Services.AddScoped<ApiClient>(); // Register ApiClient
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 
